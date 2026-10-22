@@ -62,30 +62,32 @@ public class NativeVideoCompositor {
         // 1. Create Mutable Composition
         let composition = AVMutableComposition()
 
-        guard let compVideoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
-              let compAudioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-            throw NSError(domain: "NativeVideoCompositor", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to create composition tracks"])
+        guard let compVideoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+            throw NSError(domain: "NativeVideoCompositor", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to create video composition track"])
         }
 
-        // 2. Insert and loop background video
-        let bgDuration = bgAsset.duration
+        // 2. Insert and loop background video (asynchronously loaded duration)
+        let rawBgDuration = (try? await bgAsset.load(.duration)) ?? CMTime(seconds: 10, preferredTimescale: 600)
+        let bgDuration = (rawBgDuration.isNumeric && rawBgDuration.seconds > 0.5) ? rawBgDuration : CMTime(seconds: 10, preferredTimescale: 600)
+
         var currentTime = CMTime.zero
         while currentTime < totalDuration {
             let remaining = totalDuration - currentTime
-            let slice = remaining < bgDuration ? remaining : bgDuration
+            let slice = (remaining < bgDuration) ? remaining : bgDuration
+            if slice.seconds <= 0.01 { break }
             try compVideoTrack.insertTimeRange(CMTimeRange(start: .zero, duration: slice), of: bgVideoTrack, at: currentTime)
             currentTime = currentTime + slice
         }
 
-        // 3. Insert narration audio
-        do {
-            if let narrationTrack = try await audioAsset.loadTracks(withMediaType: .audio).first {
-                let actualAudioDuration = audioAsset.duration
-                let audioInsertDuration = min(totalDuration, actualAudioDuration)
-                try compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioInsertDuration), of: narrationTrack, at: .zero)
+        // 3. Insert narration audio (only create track if valid non-empty audio exists)
+        if let narrationTrack = try? await audioAsset.loadTracks(withMediaType: .audio).first {
+            let rawAudioDuration = (try? await audioAsset.load(.duration)) ?? CMTime.zero
+            if rawAudioDuration.isNumeric && rawAudioDuration.seconds > 0.1 {
+                if let compAudioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                    let audioInsertDuration = min(totalDuration, rawAudioDuration)
+                    try? compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioInsertDuration), of: narrationTrack, at: .zero)
+                }
             }
-        } catch {
-            print("[NativeVideoCompositor] Warning: Could not load narration audio track: \(error)")
         }
 
         options.progressCallback?(0.20, "Scaling B-roll to 9:16 vertical 1080p...")
@@ -100,12 +102,12 @@ public class NativeVideoCompositor {
 
         let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compVideoTrack)
 
-        // Compute aspect fill transform
-        let naturalSize = bgVideoTrack.naturalSize
-        let preferredTransform = bgVideoTrack.preferredTransform
+        // Asynchronously load naturalSize and preferredTransform
+        let naturalSize = (try? await bgVideoTrack.load(.naturalSize)) ?? CGSize(width: 720, height: 1280)
+        let preferredTransform = (try? await bgVideoTrack.load(.preferredTransform)) ?? .identity
         let transformedSize = naturalSize.applying(preferredTransform)
-        let srcWidth = abs(transformedSize.width)
-        let srcHeight = abs(transformedSize.height)
+        let srcWidth = max(abs(transformedSize.width), 10.0)
+        let srcHeight = max(abs(transformedSize.height), 10.0)
 
         let scale = max(targetSize.width / srcWidth, targetSize.height / srcHeight)
         let scaledW = srcWidth * scale

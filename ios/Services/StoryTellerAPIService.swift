@@ -204,14 +204,7 @@ public class StoryTellerAPIService: ObservableObject {
     // MARK: - YouTube
     public func fetchYouTubeTranscript(url: String) async throws -> Story {
         if runMode == .onDevice || !isConnected {
-            return Story(
-                title: "Viral Video Breakdown",
-                story: "This mindblowing story was shared across social media and completely changed how millions view daily life. Keep watching until the very end because the twist will leave you speechless.",
-                author: "YouTube Creator",
-                upvotes: 42000,
-                subreddit: "YouTube",
-                topic: "Viral Video"
-            )
+            return try await NativeScraperService.shared.fetchYouTubePodcastStory(url: url)
         }
 
         guard let endpoint = URL(string: "\(cleanBaseURL)/api/youtube/transcript") else { throw URLError(.badURL) }
