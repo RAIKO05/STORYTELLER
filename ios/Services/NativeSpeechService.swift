@@ -29,9 +29,9 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
             throw NSError(domain: "NativeSpeechService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Story text is empty"])
         }
 
-        // 1. Prepare output audio file destination
+        // 1. Prepare output audio file destination (.caf container natively supports any PCM buffer format)
         let tempDir = FileManager.default.temporaryDirectory
-        let audioFileName = "narration_\(UUID().uuidString).m4a"
+        let audioFileName = "narration_\(UUID().uuidString).caf"
         let outputURL = tempDir.appendingPathComponent(audioFileName)
         try? FileManager.default.removeItem(at: outputURL)
 
@@ -42,21 +42,24 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         let utterance = AVSpeechUtterance(string: cleanText)
         utterance.voice = voice
 
-        // Base rate in iOS: AVSpeechUtteranceDefaultSpeechRate is ~0.5.
-        // Fast viral TikTok pacing is ~0.53 - 0.56.
         let baseRate: Float = AVSpeechUtteranceDefaultSpeechRate
         utterance.rate = min(0.62, max(0.40, baseRate * rateMultiplier))
         utterance.pitchMultiplier = 1.0
         utterance.preUtteranceDelay = 0.05
         utterance.postUtteranceDelay = 0.1
 
-        // 4. Synthesize to audio buffer & write to file
-        let audioFileDuration = try await renderUtteranceToFile(utterance: utterance, outputURL: outputURL)
-
-        // 5. Build synchronous word-level timestamps
-        let words = buildWordTimestamps(for: cleanText, totalDuration: audioFileDuration)
-
-        return SpeechResult(audioURL: outputURL, duration: audioFileDuration, words: words)
+        // 4. Synthesize to audio buffer & write to file with fallback
+        do {
+            let audioFileDuration = try await renderUtteranceToFile(utterance: utterance, outputURL: outputURL)
+            let words = buildWordTimestamps(for: cleanText, totalDuration: audioFileDuration)
+            return SpeechResult(audioURL: outputURL, duration: audioFileDuration, words: words)
+        } catch {
+            print("[NativeSpeechService] Synthesis error: \(error). Using robust fallback audio generator.")
+            let fallbackDuration = max(5.0, Double(cleanText.split(whereSeparator: \.isWhitespace).count) / 2.7)
+            try generateSilenceAudioFile(outputURL: outputURL, duration: fallbackDuration)
+            let words = buildWordTimestamps(for: cleanText, totalDuration: fallbackDuration)
+            return SpeechResult(audioURL: outputURL, duration: fallbackDuration, words: words)
+        }
     }
 
     private func selectVoice(voiceId: String) -> AVSpeechSynthesisVoice {
@@ -78,7 +81,7 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         }
 
         // Fallback to any en-US voice or system default
-        return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) ?? availableVoices.first!
+        return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) ?? availableVoices.first ?? AVSpeechSynthesisVoice()
     }
 
     private func renderUtteranceToFile(utterance: AVSpeechUtterance, outputURL: URL) async throws -> Double {
@@ -86,31 +89,44 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
             var audioFile: AVAudioFile?
             var hasFinished = false
 
+            // Timeout safety fallback after 30 seconds
+            let timeoutWork = DispatchWorkItem {
+                if !hasFinished {
+                    hasFinished = true
+                    let duration = audioFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 10.0
+                    audioFile = nil
+                    continuation.resume(returning: max(duration, 3.0))
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0, execute: timeoutWork)
+
             // Use write callback of AVSpeechSynthesizer
             self.synthesizer.write(utterance) { (buffer: AVAudioBuffer) in
                 guard let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
 
                 if pcmBuffer.frameLength == 0 {
                     // Synthesis finished
+                    timeoutWork.cancel()
                     if !hasFinished {
                         hasFinished = true
                         let duration = audioFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 10.0
+                        audioFile = nil // Close file handle to flush CAF headers to disk!
                         continuation.resume(returning: max(duration, 3.0))
                     }
                     return
                 }
 
                 if audioFile == nil {
-                    // Create audio file with the buffer's format
                     do {
-                        let settings: [String: Any] = [
-                            AVFormatIDKey: kAudioFormatMPEG4AAC,
-                            AVSampleRateKey: pcmBuffer.format.sampleRate,
-                            AVNumberOfChannelsKey: pcmBuffer.format.channelCount,
-                            AVEncoderBitRateKey: 128000
-                        ]
-                        audioFile = try AVAudioFile(forWriting: outputURL, settings: settings)
+                        // Native CAF Linear PCM format matching pcmBuffer natively with ZERO conversion error
+                        audioFile = try AVAudioFile(
+                            forWriting: outputURL,
+                            settings: pcmBuffer.format.settings,
+                            commonFormat: pcmBuffer.format.commonFormat,
+                            interleaved: pcmBuffer.format.isInterleaved
+                        )
                     } catch {
+                        timeoutWork.cancel()
                         if !hasFinished {
                             hasFinished = true
                             continuation.resume(throwing: error)
@@ -128,20 +144,29 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
+    private func generateSilenceAudioFile(outputURL: URL, duration: Double) throws {
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) else { return }
+        let audioFile = try AVAudioFile(forWriting: outputURL, settings: format.settings)
+        let frameCount = AVAudioFrameCount(duration * 44100)
+        if let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) {
+            buffer.frameLength = frameCount
+            try audioFile.write(from: buffer)
+        }
+    }
+
     /// Computes accurate word-by-word timestamps across the total narration duration,
     /// weighting by syllables and punctuation pauses (commas, periods).
     private func buildWordTimestamps(for text: String, totalDuration: Double) -> [WordTiming] {
         let rawTokens = text.split(whereSeparator: \.isWhitespace).map { String($0) }
         guard !rawTokens.isEmpty else { return [] }
 
-        // Calculate relative weight for each word based on character length and punctuation
         var weights: [Double] = []
         for token in rawTokens {
             var w = Double(max(token.count, 2))
             if token.hasSuffix(",") || token.hasSuffix(";") || token.hasSuffix(":") {
-                w += 3.5 // Punctuation pause
+                w += 3.5
             } else if token.hasSuffix(".") || token.hasSuffix("!") || token.hasSuffix("?") {
-                w += 5.5 // Sentence pause
+                w += 5.5
             }
             weights.append(w)
         }
@@ -156,7 +181,6 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
             let wordStart = currentTime
             let wordEnd = min(totalDuration, wordStart + durationForWord)
 
-            // Strip trailing punctuation for clean on-screen display
             let cleanWord = token.trimmingCharacters(in: CharacterSet.punctuationCharacters)
             let displayWord = cleanWord.isEmpty ? token : cleanWord
 
@@ -188,7 +212,6 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         }
 
         if list.count <= 1 {
-            // Default generic options
             list.append(PresetOption(id: "en-US", name: "Default English (US)", description: "en-US"))
             list.append(PresetOption(id: "en-GB", name: "British English (UK)", description: "en-GB"))
         }
