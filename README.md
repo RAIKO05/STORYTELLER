@@ -1,86 +1,119 @@
-# 🎬 StoryTeller Pro - Viral TikTok Video Generator
+# 🎬 StoryTeller Pro - Universal Studio (PC & iPhone)
 
-A powerful, automated tool application that scrapes viral stories from **Reddit**, **Quora**, **YouTube transcripts**, or generates viral scripts with **AI**, then turns them into high-retention **9:16 vertical TikTok, YouTube Shorts, and Instagram Reels videos** with dynamic **CapCut / MrBeast-style karaoke captions** and background gameplay footage.
-
----
-
-## 🌟 New: Fully AI-Matched Voice & Auto-Scrubbed Backgrounds
-
-StoryTeller Pro now features an **AI Story & Voice Matcher** and **Thematic Background Auto-Scrubber**:
-- 🤖 **AI Voice & Persona Matching**: Analyzes the narrative tone, perspective, and emotion to automatically choose the ideal narrator:
-  - **Relationship & Wedding Drama / AITA**: Matched with `Jenny` (Conversational Female) or `Aria` (Emotional) at `+12%` pacing.
-  - **Workplace Revenge & Malicious Compliance**: Matched with `Guy` (Energetic Narrator) at `+15%` pacing with Neon Lime highlights.
-  - **Spooky, Horror & True Crime Mysteries**: Matched with `Eric` (Deep Mystery) at `+5%` pacing with Electric Cyan text.
-  - **Chaos, Comedy & TIFU**: Matched with `Guy` / `Ana` at `+18%` pacing with high-velocity bouncing words.
-  - **Late Night Confessions**: Matched with `Christopher` (Deep Storyteller) at `+8%` pacing.
-- 🎮 **B-Roll Auto-Scrubber**: Automatically scrubs YouTube for copyright-free vertical 9:16 gameplay footage or generates procedural AI cinematic visuals matching the story theme:
-  - `minecraft_parkour`: Minecraft Parkour Vertical 9:16 Gameplay
-  - `subway_surfers`: Subway Surfers Fast Vertical Run
-  - `gta_stunts`: GTA V Mega Ramp Stunts
-  - `satisfying_asmr`: Satisfying Kinetic Sand / Soap Cutting ASMR
-  - `dark_cinematic`: Procedural AI Atmospheric Mystery Loop
+A unified **viral TikTok & Shorts video generator** designed to work seamlessly across your **PC** and **iPhone**.
 
 ---
 
-## ✨ Features
+## 📱 Universal Architecture (PC + iPhone Synergy)
 
-- **Multi-Source Story Ingestion**:
-  - 🔥 **Reddit**: Scrapes top stories from `r/AmItheAsshole`, `r/tifu`, `r/confession`, `r/AskReddit`, `r/relationship_advice`, or parses any direct Reddit post link.
-  - 💡 **Quora**: Scrapes viral Q&A secrets, life lessons, and confessions via search or direct link.
-  - ▶️ **YouTube Transcripts**: Extracts subtitles & transcripts from any YouTube video URL using `yt-dlp` and formats them into a tight 60–90 second viral script.
-  - ✨ **AI Scriptwriter**: Built-in viral storytelling engine (supports Google Gemini or rich offline algorithmic templates for revenge, moral dilemmas, and confessions).
-  - ✍️ **Custom Story Editor**: Live word counter and estimated TikTok duration calculator.
-
-- **Realistic Neural Voiceover (TTS)**:
-  - Powered by **Microsoft Edge Neural TTS** (100% free, no API key required).
-  - 7 top narrators: Christopher, Guy, Jenny, Aria, Ryan, Eric, and Ana.
-  - Configurable pacing (`+10%`, `+18%`, `+25%`) for optimal TikTok retention.
-  - Instant voice sample preview button.
-
-- **Dynamic TikTok Karaoke Subtitles**:
-  - Generates synchronized `.ass` (Advanced SubStation Alpha) subtitles with word-level highlight tracking.
-  - Active word glows in **Neon Yellow (`#FFEE00`)**, **Neon Green**, **Cyan**, or **Hot Red**.
-  - Formatted with thick black borders, drop shadows, and mobile-safe margins (positioned cleanly above TikTok's UI).
-
-- **9:16 Vertical Video Studio**:
-  - Auto-crops and scales background gameplay footage to 1080x1920.
-  - Auto-scrubs or procedural AI motion loops.
-  - Blazing fast single-pass FFmpeg encoding.
-
-- **Social Media Metadata Generator**:
-  - Automatically drafts viral titles, engaging descriptions, and trending hashtags (`#redditstories`, `#storytime`, `#fyp`, `#viral`).
-  - One-click "Copy Caption & Hashtags" button.
-
----
-
-## 🚀 Quick Start
-
-### 1. Launch the Web Studio
-Double-click `start.bat` or run:
-
-```bash
-python main.py
+```
+       +---------------------------------------------+
+       |           PC Backend & Video Engine         |
+       |  (FastAPI + FFmpeg + Edge-TTS + Scrapers)   |
+       |             LAN: 192.168.11.146:8000        |
+       +----------------------+----------------------+
+                              |
+                     Local Wi-Fi Network
+                              |
+       +----------------------+----------------------+
+       |          StoryTeller iOS App (.ipa)          |
+       |  (Native SwiftUI + AVPlayer + Photos Save)  |
+       |      Installed via Sideloadly / AltStore    |
+       +---------------------------------------------+
 ```
 
-This will launch the local server and automatically open **`http://localhost:8000`** in your default web browser.
+1. **PC**: Runs the heavy rendering engine (`FFmpeg`, `Edge Neural TTS`, and video scraper).
+2. **iPhone**: A native iOS SwiftUI client (`StoryTeller.ipa`):
+   - Browse & scrape viral stories from Reddit, Quora, YouTube transcripts, or AI.
+   - **AI Story & Voice Matcher**: Automatically picks the best voice, speed, and b-roll.
+   - **Live 9:16 Video Player**: Watch rendered videos directly on your phone.
+   - **1-Tap Save to Camera Roll (`PHPhotoLibrary`)**: Downloads the MP4 directly into your iPhone Photos app so you can immediately post to **TikTok**, **Instagram Reels**, or **YouTube Shorts**!
+   - **One-Tap Caption Copy**: Copies viral titles and hashtags to clipboard.
 
 ---
 
-### 2. Command Line Interface (CLI)
-You can also generate videos directly from your terminal:
+## 🛠️ How to Build & Download `StoryTeller.ipa` via GitHub Actions
+
+Just like in the **Bayan** project, StoryTeller includes an automated cloud Mac build workflow [`.github/workflows/build-ios.yml`](.github/workflows/build-ios.yml) powered by **XcodeGen**:
+
+### Step 1: Push to your GitHub Repository
+Create a new GitHub repository (e.g. `STORYTELLER`) on your GitHub account (`RAIKO05`), then run in terminal:
 
 ```bash
-# Full AI-Automated Generation (Auto-Matches voice and auto-scrubs background):
-python cli.py --source ai --category revenge
-
-# Generate from Reddit r/AmItheAsshole:
-python cli.py --source reddit --subreddit AmItheAsshole
-
-# Generate from a YouTube video transcript:
-python cli.py --source youtube --url "https://www.youtube.com/watch?v=VIDEO_ID"
-
-# Manually override voice or speed if desired:
-python cli.py --source ai --category aita --voice en-US-ChristopherNeural --rate "+15%"
+cd "c:\Users\Aka.mouadd\STORY TELLER"
+git remote add origin https://github.com/RAIKO05/STORYTELLER.git
+git push -u origin main
 ```
 
-Generated videos are saved in the `outputs/` folder.
+### Step 2: Automated Cloud Mac Build
+1. GitHub Actions will automatically start the **Build iOS App on Cloud Mac** workflow (`macos-15`).
+2. It installs XcodeGen, generates the Xcode project, compiles the iOS app, and packages `StoryTeller.ipa`.
+3. Within ~2–3 minutes, your **`StoryTeller.ipa`** will be published and available for direct download in:
+   - **GitHub Actions Artifacts** (under Summary > `StoryTeller-iOS-App`)
+   - **GitHub Releases** (under Releases > `v1.0.x`)
+
+### Step 3: Install on iPhone
+Install `StoryTeller.ipa` onto your iPhone using your preferred sideloading tool:
+- **AltStore / AltServer** (Windows or Mac)
+- **Sideloadly** (1-click USB/Wi-Fi installer)
+- **TrollStore** (if iOS 14.0–17.0)
+- **Scarlet** or **Esig**
+
+---
+
+## 📲 Connecting iPhone to your PC
+
+1. **Start the PC Server**:
+   ```bash
+   python main.py
+   ```
+   *Your PC will display its local Wi-Fi address (e.g., `http://192.168.11.146:8000`).*
+
+2. **Open the StoryTeller iOS App**:
+   - Ensure your iPhone is connected to the same Wi-Fi network.
+   - Open the **Connect** tab in the app.
+   - Tap **Local Wi-Fi PC (`http://192.168.11.146:8000`)** or enter your PC's IP.
+   - Tap **Test**. The status dot turns **Green (Connected)**.
+
+3. **Generate & Post**:
+   - Pick a Reddit, Quora, YouTube, or AI story.
+   - The AI automatically recommends the narrator voice, pacing, and B-Roll footage.
+   - Tap **GENERATE VIRAL TIKTOK VIDEO**.
+   - Watch the video in the native 9:16 player.
+   - Tap **Save to iPhone Photos (Camera Roll)**.
+   - Open TikTok or Reels and upload directly from your Photos!
+
+---
+
+## 📁 Repository Structure
+
+```
+STORY TELLER/
+├── .github/
+│   └── workflows/
+│       └── build-ios.yml      # GitHub Actions cloud compiler for StoryTeller.ipa
+├── ios/
+│   ├── project.yml            # XcodeGen project specification (iOS 17.0+)
+│   ├── StoryTellerApp.swift   # iOS App entry point
+│   ├── Config/
+│   │   ├── Info.plist         # Photos permission & LAN arbitrary loads
+│   │   └── StoryTeller.entitlements
+│   ├── Models/
+│   │   └── StoryModel.swift   # Swift Codable data models
+│   ├── Services/
+│   │   └── StoryTellerAPIService.swift # REST client & Camera Roll exporter
+│   ├── Views/
+│   │   ├── MainTabView.swift
+│   │   ├── CreatorView.swift  # Native SwiftUI Studio with AI Matcher
+│   │   ├── VideoPlayerSheet.swift # 9:16 Video Player & Photos Saver
+│   │   ├── GalleryView.swift  # Video Vault
+│   │   ├── ServerConnectSheet.swift # Wi-Fi IP configuration
+│   │   └── StoryTellerWebView.swift # Embedded Web Studio
+│   └── Assets.xcassets/       # AppIcon & AccentColor
+├── app/                       # Python FastAPI + Scrapers + Video Engine
+├── assets/                    # Backgrounds & Audio
+├── outputs/                   # Rendered 1080x1920 MP4 videos
+├── main.py                    # Multi-interface server (PC & iPhone LAN)
+├── cli.py                     # CLI generator
+└── start.bat                  # One-click Windows starter
+```
