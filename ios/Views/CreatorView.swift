@@ -139,6 +139,14 @@ public struct CreatorView: View {
                         Text("StoryTeller")
                             .font(.system(size: 18, weight: .heavy, design: .rounded))
                             .foregroundColor(.white)
+                        if let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                            Text("v\(v)")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(.cyan.opacity(0.85))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.cyan.opacity(0.12)))
+                        }
                     }
                 }
 

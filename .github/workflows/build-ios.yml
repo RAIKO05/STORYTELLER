@@ -40,11 +40,14 @@ jobs:
       - name: 🏗 Build iOS App
         run: |
           cd ios
+          VERSION="1.0.${{ github.run_number }}"
           if ! xcodebuild -project StoryTeller.xcodeproj \
             -scheme StoryTeller \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -62,14 +65,18 @@ jobs:
           mkdir -p build/Payload
           cp -R build/DerivedData/Build/Products/Release-iphoneos/StoryTeller.app build/Payload/
           cd build
-          zip -qr StoryTeller.ipa Payload
-          echo "✅ StoryTeller.ipa successfully packaged!"
+          VERSION_TAG="v1.0.${{ github.run_number }}"
+          zip -qr "StoryTeller_${VERSION_TAG}.ipa" Payload
+          cp "StoryTeller_${VERSION_TAG}.ipa" StoryTeller.ipa
+          echo "✅ Packaged StoryTeller_${VERSION_TAG}.ipa and StoryTeller.ipa!"
 
       - name: 🚀 Upload StoryTeller.ipa Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: StoryTeller-iOS-App
-          path: ios/build/StoryTeller.ipa
+          name: "StoryTeller-iOS-v1.0.${{ github.run_number }}"
+          path: |
+            ios/build/StoryTeller_v1.0.${{ github.run_number }}.ipa
+            ios/build/StoryTeller.ipa
           retention-days: 14
 
       - name: 🏷️ Publish Direct IPA to GitHub Releases
@@ -80,13 +87,20 @@ jobs:
           name: "StoryTeller iOS v1.0.${{ github.run_number }}"
           body: |
             ### 🎬 StoryTeller iOS Universal & Standalone Release
+
+            #### 📱 Direct IPA Downloads:
+            - **Versioned IPA**: [`StoryTeller_v1.0.${{ github.run_number }}.ipa`](https://github.com/RAIKO05/STORYTELLER/releases/download/v1.0.${{ github.run_number }}/StoryTeller_v1.0.${{ github.run_number }}.ipa)
+            - **Direct Alias**: [`StoryTeller.ipa`](https://github.com/RAIKO05/STORYTELLER/releases/download/v1.0.${{ github.run_number }}/StoryTeller.ipa)
+
             - **📱 100% On-Device Standalone**: Works anywhere directly on your iPhone! No PC or local Wi-Fi required.
             - **⚡ Hardware-Accelerated 1080x1920 Rendering**: Native AVFoundation + Apple VideoToolbox video composition engine renders viral 9:16 videos directly on iPhone.
             - **🗣️ On-Device & Neural Speech**: Synthesizes natural voiceover with synced word-level timestamps.
-            - **🎮 Expanded Viral B-Roll Footage**: Minecraft Parkour, Subway Surfers, GTA V Mega Ramp, BeamNG Crashes, CS:GO Surf, Kinetic Sand, Slime ASMR, Marble Run, Synthwave Drive, and offline procedural loops.
+            - **🎮 Expanded Viral B-Roll Footage**: Universal H.264 Subway Surfers, Minecraft Parkour, GTA V Mega Ramp, ASMR loops, and offline procedural loops.
             - **📷 Photos Camera Roll Picker**: Pick ANY video from your iPhone camera roll to use as the background B-roll footage.
             - **🔥 Direct Reddit Scraping & AI Story Engine**: Scrapes Reddit hot stories directly over HTTPS or generates viral scripts across 8 high-retention categories.
+            - **🎙️ YouTube Podcast Synthesis**: Converts YouTube podcast links into compelling viral storytelling scripts with zero filler.
             - **✨ Dynamic Karaoke Subtitles**: Bouncing CapCut / MrBeast style subtitles with high-contrast outlines and neon word highlights.
             - **💾 Auto-Save to Camera Roll**: Renders directly to your iPhone Photos app with 1-tap share to TikTok, Instagram Reels, and YouTube Shorts.
           files: |
+            ios/build/StoryTeller_v1.0.${{ github.run_number }}.ipa
             ios/build/StoryTeller.ipa
