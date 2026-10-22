@@ -18,12 +18,12 @@ public struct GalleryView: View {
                 } else if videos.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "film.stack")
-                            .font(.system(size: 44))
+                            .font(.system(size: 48))
                             .foregroundColor(.gray)
                         Text("No Videos Generated Yet")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
-                        Text("Create your first viral video in the Studio tab!")
+                        Text(api.runMode == .onDevice ? "Create your first viral video right on your iPhone!" : "Create your first viral video in the Studio tab!")
                             .font(.system(size: 12))
                             .foregroundColor(.gray)
                     }
@@ -34,14 +34,15 @@ public struct GalleryView: View {
                                 Button(action: {
                                     self.selectedVideo = GenerationResult(
                                         job_id: vid.filename,
-                                        title: vid.filename.replacingOccurrences(of: ".mp4", with: ""),
+                                        title: vid.filename.replacingOccurrences(of: ".mp4", with: "").replacingOccurrences(of: "StoryTeller_", with: ""),
                                         duration: 45.0,
                                         video_filename: vid.filename,
                                         thumbnail_filename: vid.thumbnail_url,
-                                        caption: vid.filename,
-                                        hashtags: "#fyp #viral",
+                                        caption: "Viral TikTok Story 🤯 #fyp #viral #storytime",
+                                        hashtags: "#fyp #viral #tiktok #trending #redditstories",
                                         word_count: 100,
-                                        ai_match: nil
+                                        ai_match: nil,
+                                        localFileURL: vid.url.starts(with: "file://") ? vid.url : nil
                                     )
                                 }) {
                                     HStack(spacing: 12) {
@@ -55,15 +56,27 @@ public struct GalleryView: View {
                                         }
 
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text(vid.filename)
+                                            Text(vid.filename.replacingOccurrences(of: ".mp4", with: ""))
                                                 .font(.system(size: 13, weight: .bold))
                                                 .foregroundColor(.white)
                                                 .lineLimit(2)
                                                 .multilineTextAlignment(.leading)
 
-                                            Text("\(String(format: "%.1f", vid.size_mb)) MB")
-                                                .font(.system(size: 11, design: .monospaced))
-                                                .foregroundColor(.gray)
+                                            HStack(spacing: 8) {
+                                                Text("\(String(format: "%.1f", vid.size_mb)) MB")
+                                                    .font(.system(size: 11, design: .monospaced))
+                                                    .foregroundColor(.gray)
+
+                                                if vid.url.starts(with: "file://") {
+                                                    Text("📱 On-Device")
+                                                        .font(.system(size: 10, weight: .bold))
+                                                        .padding(.horizontal, 5)
+                                                        .padding(.vertical, 2)
+                                                        .background(Color.cyan.opacity(0.2))
+                                                        .foregroundColor(.cyan)
+                                                        .cornerRadius(4)
+                                                }
+                                            }
                                         }
 
                                         Spacer()

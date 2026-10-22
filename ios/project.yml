@@ -27,6 +27,13 @@ targets:
       - sdk: Photos.framework
       - sdk: PhotosUI.framework
       - sdk: WebKit.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: CoreText.framework
+      - sdk: AudioToolbox.framework
+      - sdk: QuartzCore.framework
+      - sdk: UniformTypeIdentifiers.framework
     settings:
       base:
         PRODUCT_NAME: StoryTeller

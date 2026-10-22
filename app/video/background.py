@@ -51,6 +51,27 @@ THEMATIC_QUERIES = {
         "filename": "temple_run.mp4",
         "default_url": "https://www.youtube.com/watch?v=fuQf-iGCmKA"
     },
+    "csgo_surf": {
+        "name": "CS:GO / CS2 Smooth Surf Speedrun",
+        "category": "Gaming",
+        "query": "ytsearch1:csgo surf gameplay vertical no commentary 9:16",
+        "filename": "csgo_surf.mp4",
+        "default_url": "https://www.youtube.com/watch?v=wXw4oNfK1e0"
+    },
+    "mario_kart": {
+        "name": "Mario Kart 8 200cc Rainbow Road",
+        "category": "Gaming",
+        "query": "ytsearch1:mario kart 8 deluxe vertical gameplay no commentary",
+        "filename": "mario_kart.mp4",
+        "default_url": "https://www.youtube.com/watch?v=kYv9bHwF2s8"
+    },
+    "only_up": {
+        "name": "Only Up Parkour Speedrun",
+        "category": "Gaming",
+        "query": "ytsearch1:only up gameplay vertical no commentary 9:16",
+        "filename": "only_up.mp4",
+        "default_url": "https://www.youtube.com/watch?v=1F2bX_c3e8Q"
+    },
 
     # 2. Satisfying / ASMR
     "satisfying_asmr": {
@@ -74,14 +95,56 @@ THEMATIC_QUERIES = {
         "filename": "power_washing.mp4",
         "default_url": "https://www.youtube.com/watch?v=3clqk2U3T9Y"
     },
+    "slime_asmr": {
+        "name": "Crunchy Slime & Bubble Pop ASMR",
+        "category": "Satisfying ASMR",
+        "query": "ytsearch1:satisfying slime crunch bubble pop vertical 9:16",
+        "filename": "slime_asmr.mp4",
+        "default_url": "https://www.youtube.com/watch?v=UqQ3sVnN5mI"
+    },
+    "marble_run": {
+        "name": "Gravity Marble Run & Spiral Race",
+        "category": "Satisfying ASMR",
+        "query": "ytsearch1:satisfying marble run vertical 9:16 no commentary",
+        "filename": "marble_run.mp4",
+        "default_url": "https://www.youtube.com/watch?v=L2G5aM4n7o8"
+    },
+    "wood_turning": {
+        "name": "Wood Turning & Resin Bowl Carving",
+        "category": "Satisfying ASMR",
+        "query": "ytsearch1:satisfying wood lathe turning vertical 9:16",
+        "filename": "wood_turning.mp4",
+        "default_url": "https://www.youtube.com/watch?v=jW01e1xHqP0"
+    },
 
-    # 3. Aesthetic / Late Night / Driving
+    # 3. Aesthetic / Late Night / Atmosphere
     "synthwave_drive": {
         "name": "Cyberpunk Synthwave Sunset Night Drive",
         "category": "Aesthetic",
         "query": "ytsearch1:synthwave sunset night drive loop vertical 9:16",
         "filename": "synthwave_drive.mp4",
         "default_url": "https://www.youtube.com/watch?v=7eTfyve4NXE"
+    },
+    "tokyo_rain": {
+        "name": "Rainy Tokyo Cyber City Night Walk",
+        "category": "Aesthetic",
+        "query": "ytsearch1:rainy tokyo night walk vertical 9:16 4k 60fps",
+        "filename": "tokyo_rain.mp4",
+        "default_url": "https://www.youtube.com/watch?v=8VzZ6X0wJ1Y"
+    },
+    "deep_space": {
+        "name": "Deep Space Nebula & Galaxy Flight",
+        "category": "Aesthetic",
+        "query": "ytsearch1:deep space flight nebula vertical loop 9:16",
+        "filename": "deep_space.mp4",
+        "default_url": "https://www.youtube.com/watch?v=17jymDn0W6U"
+    },
+    "ocean_deep": {
+        "name": "Deep Ocean Coral & Bioluminescent Jellyfish",
+        "category": "Aesthetic",
+        "query": "ytsearch1:deep ocean jellyfish coral vertical 9:16 4k",
+        "filename": "ocean_deep.mp4",
+        "default_url": "https://www.youtube.com/watch?v=7h4gV0k9oXw"
     },
 
     # 4. Procedural AI Motion Backgrounds (100% Offline)
@@ -104,6 +167,20 @@ THEMATIC_QUERIES = {
         "category": "AI Procedural",
         "query": "",
         "filename": "aurora_galaxy.mp4",
+        "default_url": ""
+    },
+    "crimson_pulse": {
+        "name": "Crimson Suspense Pulse (AI Procedural)",
+        "category": "AI Procedural",
+        "query": "",
+        "filename": "crimson_pulse.mp4",
+        "default_url": ""
+    },
+    "cosmic_warp": {
+        "name": "Cosmic Starfield Warp (AI Procedural)",
+        "category": "AI Procedural",
+        "query": "",
+        "filename": "cosmic_warp.mp4",
         "default_url": ""
     }
 }
@@ -168,6 +245,32 @@ class BackgroundManager:
                 "ffmpeg", "-y",
                 "-f", "lavfi",
                 "-i", "gradients=s=270x480:d=45:c0=0x05192d:c1=0x003f5c:c2=0x2f4b7c:c3=0x665191:speed=0.01",
+                "-vf", vf,
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-t", "45",
+                str(out_file)
+            ]
+        elif theme == "crimson_pulse":
+            vf = "scale=1080:1920:flags=bilinear,vignette=PI/3.0"
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "gradients=s=270x480:d=45:c0=0x2b0006:c1=0x0a0002:c2=0x150004:speed=0.012",
+                "-vf", vf,
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-t", "45",
+                str(out_file)
+            ]
+        elif theme == "cosmic_warp":
+            vf = "scale=1080:1920:flags=bilinear,vignette=PI/3.2"
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "gradients=s=270x480:d=45:c0=0x08001a:c1=0x010008:c2=0x120224:speed=0.018",
                 "-vf", vf,
                 "-c:v", "libx264",
                 "-preset", "veryfast",

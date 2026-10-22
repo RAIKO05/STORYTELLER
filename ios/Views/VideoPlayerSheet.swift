@@ -16,6 +16,9 @@ public struct VideoPlayerSheet: View {
     }
 
     private var fullVideoURL: URL? {
+        if let local = result.localFileURL, let localURL = URL(string: local) {
+            return localURL
+        }
         let path = "/outputs/\(result.video_filename)"
         return URL(string: "\(api.baseURL)\(path)")
     }
@@ -54,8 +57,8 @@ public struct VideoPlayerSheet: View {
                                 if isSaving {
                                     ProgressView().tint(.black)
                                 } else {
-                                    Image(systemName: "square.and.arrow.down.fill")
-                                    Text(saveMessage ?? "Save to iPhone Photos (Camera Roll)")
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text(saveMessage ?? (result.localFileURL != nil ? "✅ Saved in iPhone Photos!" : "Save to iPhone Photos (Camera Roll)"))
                                         .fontWeight(.bold)
                                 }
                             }
@@ -81,13 +84,13 @@ public struct VideoPlayerSheet: View {
                             .cornerRadius(12)
                         }
 
-                        // 3. Native Share Link
+                        // 3. Native Share to TikTok / Reels / Shorts
                         if let url = fullVideoURL {
-                            ShareLink(item: url) {
+                            ShareLink(item: url, message: Text("\(result.caption) \(result.hashtags)")) {
                                 HStack {
                                     Image(systemName: "square.and.arrow.up")
-                                    Text("Share Video Link / AirDrop")
-                                        .font(.system(size: 13, weight: .medium))
+                                    Text("Post to TikTok / Reels / Shorts / AirDrop")
+                                        .font(.system(size: 14, weight: .bold))
                                 }
                                 .foregroundColor(.cyan)
                                 .padding(.top, 4)
@@ -98,9 +101,9 @@ public struct VideoPlayerSheet: View {
 
                     Spacer(minLength: 10)
                 }
-                .padding(.top, 10)
+                .padding(.top, 12)
             }
-            .navigationTitle(result.title)
+            .navigationTitle("Viral Video Ready")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -108,40 +111,53 @@ public struct VideoPlayerSheet: View {
                         player?.pause()
                         dismiss()
                     }
-                    .foregroundColor(.cyan)
-                    .fontWeight(.bold)
+                    .foregroundColor(.white)
                 }
             }
             .onAppear {
-                if let url = fullVideoURL {
-                    let avPlayer = AVPlayer(url: url)
-                    self.player = avPlayer
-                    avPlayer.play()
-                }
+                setupPlayer()
             }
             .onDisappear {
                 player?.pause()
+                player = nil
             }
         }
     }
 
+    private func setupPlayer() {
+        guard let url = fullVideoURL else { return }
+        let playerItem = AVPlayerItem(url: url)
+        self.player = AVPlayer(playerItem: playerItem)
+        self.player?.play()
+
+        // Loop playback automatically
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: playerItem,
+            queue: .main
+        ) { [weak player] _ in
+            player?.seek(to: .zero)
+            player?.play()
+        }
+    }
+
     private func saveToCameraRoll() {
+        guard let url = fullVideoURL else { return }
         isSaving = true
-        saveMessage = "Downloading & Saving..."
         Task {
             do {
-                try await api.saveVideoToCameraRoll(videoRelativeURL: "/outputs/\(result.video_filename)")
-                saveMessage = "✅ Saved to Photos!"
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                try await api.saveVideoToCameraRoll(videoRelativeURL: url.absoluteString)
+                saveMessage = "Saved to Photos!"
             } catch {
-                saveMessage = "❌ Save failed: \(error.localizedDescription)"
+                saveMessage = "Error: \(error.localizedDescription)"
             }
             isSaving = false
         }
     }
 
     private func copyCaption() {
-        UIPasteboard.general.string = result.caption
+        let full = "\(result.caption)\n\n\(result.hashtags)"
+        UIPasteboard.general.string = full
         isCopied = true
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {

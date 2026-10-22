@@ -79,11 +79,14 @@ jobs:
           tag_name: "v1.0.${{ github.run_number }}"
           name: "StoryTeller iOS v1.0.${{ github.run_number }}"
           body: |
-            ### 🎬 StoryTeller iOS Universal Release
-            - **Universal Mobile & PC Synergy**: Connect your iPhone to your PC running StoryTeller over local Wi-Fi.
-            - **Multi-Source Story Ingestion**: Scrape Reddit viral stories (AITA, TIFU, Confessions), Quora, YouTube transcripts, or generate with AI.
-            - **AI Voice & B-Roll Matcher**: Automatic tone detection, voice actor selection, pacing, and dynamic b-roll scrubbing.
-            - **One-Tap Save to Camera Roll**: Directly save 1080x1920 MP4 viral videos into your iPhone Photos app ready to post to TikTok, YouTube Shorts, and Instagram Reels!
-            - **Native Karaoke Subtitles & 9:16 Video Player**: Full-screen vertical playback with video controls.
+            ### 🎬 StoryTeller iOS Universal & Standalone Release
+            - **📱 100% On-Device Standalone**: Works anywhere directly on your iPhone! No PC or local Wi-Fi required.
+            - **⚡ Hardware-Accelerated 1080x1920 Rendering**: Native AVFoundation + Apple VideoToolbox video composition engine renders viral 9:16 videos directly on iPhone.
+            - **🗣️ On-Device & Neural Speech**: Synthesizes natural voiceover with synced word-level timestamps.
+            - **🎮 Expanded Viral B-Roll Footage**: Minecraft Parkour, Subway Surfers, GTA V Mega Ramp, BeamNG Crashes, CS:GO Surf, Kinetic Sand, Slime ASMR, Marble Run, Synthwave Drive, and offline procedural loops.
+            - **📷 Photos Camera Roll Picker**: Pick ANY video from your iPhone camera roll to use as the background B-roll footage.
+            - **🔥 Direct Reddit Scraping & AI Story Engine**: Scrapes Reddit hot stories directly over HTTPS or generates viral scripts across 8 high-retention categories.
+            - **✨ Dynamic Karaoke Subtitles**: Bouncing CapCut / MrBeast style subtitles with high-contrast outlines and neon word highlights.
+            - **💾 Auto-Save to Camera Roll**: Renders directly to your iPhone Photos app with 1-tap share to TikTok, Instagram Reels, and YouTube Shorts.
           files: |
             ios/build/StoryTeller.ipa
