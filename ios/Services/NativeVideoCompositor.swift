@@ -92,13 +92,18 @@ public class NativeVideoCompositor {
 
         options.progressCallback?(0.20, "Scaling B-roll to 9:16 vertical 1080p...")
 
+        let effectiveDuration = composition.duration
+        guard effectiveDuration.isNumeric && effectiveDuration.seconds > 0.5 else {
+            throw NSError(domain: "NativeVideoCompositor", code: 400, userInfo: [NSLocalizedDescriptionKey: "Composition timeline is empty or duration is invalid"])
+        }
+
         // 4. Video Composition & Layer Instructions (Center-crop & Scale to 1080x1920)
         let videoComposition = AVMutableVideoComposition()
         videoComposition.renderSize = targetSize
         videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
 
         let instruction = AVMutableVideoCompositionInstruction()
-        instruction.timeRange = CMTimeRange(start: .zero, duration: totalDuration)
+        instruction.timeRange = CMTimeRange(start: .zero, duration: effectiveDuration)
 
         let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compVideoTrack)
 
@@ -128,6 +133,7 @@ public class NativeVideoCompositor {
         // 5. Build Subtitle Overlay Layers
         let parentLayer = CALayer()
         parentLayer.frame = CGRect(origin: .zero, size: targetSize)
+        parentLayer.isGeometryFlipped = true
 
         let videoLayer = CALayer()
         videoLayer.frame = CGRect(origin: .zero, size: targetSize)
@@ -153,13 +159,13 @@ public class NativeVideoCompositor {
 
         options.progressCallback?(0.50, "Rendering with Apple VideoToolbox hardware encoder...")
 
-        // 6. Export Session
+        // 6. Export Session (Use AVAssetExportPresetHighestQuality for portrait 9:16 compatibility)
         let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let outputFileName = "StoryTeller_\(UUID().uuidString).mp4"
         let outputURL = docsDir.appendingPathComponent(outputFileName)
         try? FileManager.default.removeItem(at: outputURL)
 
-        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPreset1920x1080) else {
+        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
             throw NSError(domain: "NativeVideoCompositor", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to create export session"])
         }
 
@@ -181,8 +187,43 @@ public class NativeVideoCompositor {
         await exportSession.export()
         progressTask.cancel()
 
-        if let error = exportSession.error {
-            throw error
+        // If primary export with animationTool failed, try fallback clean composition
+        if exportSession.status != .completed {
+            let primaryError = exportSession.error
+            print("[NativeVideoCompositor] Primary export with animationTool failed: \(String(describing: primaryError)). Attempting fallback composition...")
+
+            let cleanVideoComp = AVMutableVideoComposition()
+            cleanVideoComp.renderSize = targetSize
+            cleanVideoComp.frameDuration = CMTime(value: 1, timescale: 30)
+            cleanVideoComp.instructions = [instruction]
+
+            try? FileManager.default.removeItem(at: outputURL)
+            if let fallbackSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) {
+                fallbackSession.outputURL = outputURL
+                fallbackSession.outputFileType = .mp4
+                fallbackSession.videoComposition = cleanVideoComp
+                fallbackSession.shouldOptimizeForNetworkUse = true
+                await fallbackSession.export()
+
+                if fallbackSession.status == .completed && FileManager.default.fileExists(atPath: outputURL.path) {
+                    print("[NativeVideoCompositor] Fallback video composition successfully exported!")
+                    options.progressCallback?(0.96, "Saving directly to iPhone Camera Roll...")
+                    await saveToPhotoLibrary(fileURL: outputURL)
+                    options.progressCallback?(1.0, "Complete!")
+                    return outputURL
+                }
+            }
+
+            if let error = primaryError {
+                let nsError = error as NSError
+                var details = error.localizedDescription
+                if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                    details += " (\(underlying.domain) \(underlying.code): \(underlying.localizedDescription))"
+                }
+                throw NSError(domain: "NativeVideoCompositor", code: nsError.code, userInfo: [
+                    NSLocalizedDescriptionKey: details
+                ])
+            }
         }
 
         guard exportSession.status == .completed, FileManager.default.fileExists(atPath: outputURL.path) else {
