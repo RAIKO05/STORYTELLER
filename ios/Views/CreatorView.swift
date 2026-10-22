@@ -2,22 +2,6 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 
-// Transferable helper for PhotosPicker video selection
-struct MovieFile: Transferable {
-    let url: URL
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { movie in
-            SentTransferredFile(movie.url)
-        } importing: { received in
-            let copy = FileManager.default.temporaryDirectory.appendingPathComponent("custom_bg_\(UUID().uuidString).mp4")
-            try? FileManager.default.removeItem(at: copy)
-            try FileManager.default.copyItem(at: received.file, to: copy)
-            return Self(url: copy)
-        }
-    }
-}
-
 public struct CreatorView: View {
     @ObservedObject var api = StoryTellerAPIService.shared
 
@@ -30,6 +14,17 @@ public struct CreatorView: View {
         case youtube = "YouTube"
         case custom = "Custom"
         public var id: String { rawValue }
+
+        var icon: String {
+            switch self {
+            case .curated: return "flame.fill"
+            case .reddit: return "bubble.left.and.bubble.right.fill"
+            case .ai: return "wand.and.stars"
+            case .quora: return "lightbulb.fill"
+            case .youtube: return "play.rectangle.fill"
+            case .custom: return "pencil.line"
+            }
+        }
     }
 
     @State private var selectedSource: SourceType = .curated
@@ -77,51 +72,67 @@ public struct CreatorView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.05, green: 0.06, blue: 0.09).ignoresSafeArea()
+                // 1. Ambient Liquid Mesh Background
+                LiquidMeshBackground()
 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // 1. Run Mode Switcher (Standalone iPhone vs PC Server)
-                        modeSwitcherCard
+                // 2. Main Scrollable Content
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        // Header Status Pill & Title
+                        topHeaderSection
 
-                        // 2. Source Segmented Control
-                        sourcePickerSection
+                        // App Mode Segmented Capsule
+                        modeSwitcherCapsule
 
-                        // 3. Active Story Editor
-                        storyEditorSection
+                        // Source Tabs (Horizontal Glass Carousel)
+                        sourceSelectorBar
 
-                        // 4. AI Story & Voice Matcher Banner
+                        // Subview based on active source
+                        activeSourceControls
+
+                        // Story Editor Glass Card
+                        storyEditorCard
+
+                        // AI Match Holographic Glass Banner
                         if let match = aiMatch {
                             aiMatchCard(match)
                         }
 
-                        // 5. Voice & Background Controls
-                        controlsSection
+                        // Voice, Pacing & B-Roll Glass Card
+                        controlsGlassCard
 
-                        // 6. Generate CTA Button
-                        generateButtonSection
+                        // CTA Section
+                        generateSection
+
+                        // Extra bottom spacing for the floating tab bar
+                        Spacer(minLength: 90)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 32)
+                    .padding(.top, 10)
                 }
             }
-            .navigationTitle("StoryTeller AI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "film.stack.fill")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(colors: [Color.cyan, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                        Text("StoryTeller")
+                            .font(.system(size: 18, weight: .heavy, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showConnectSheet = true }) {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(api.runMode == .onDevice ? Color.cyan : (api.isConnected ? Color.green : Color.orange))
-                                .frame(width: 8, height: 8)
-                            Text(api.runMode == .onDevice ? "📱 Standalone" : (api.isConnected ? "PC Connected" : "Connect PC"))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(red: 0.12, green: 0.15, blue: 0.22))
-                        .cornerRadius(16)
+                        LiquidGlassPill(
+                            text: api.runMode == .onDevice ? "Standalone" : (api.isConnected ? "Connected" : "Connect PC"),
+                            icon: api.runMode == .onDevice ? "bolt.shield.fill" : (api.isConnected ? "wifi" : "wifi.exclamationmark"),
+                            tintColor: api.runMode == .onDevice ? .cyan : (api.isConnected ? .green : .orange)
+                        )
                     }
                 }
             }
@@ -145,59 +156,135 @@ public struct CreatorView: View {
         }
     }
 
-    // MARK: - Mode Switcher Card
-    private var modeSwitcherCard: some View {
-        VStack(spacing: 10) {
-            Picker("App Mode", selection: $api.runMode) {
-                Text("📱 iPhone Standalone").tag(AppRunMode.onDevice)
-                Text("💻 PC Server").tag(AppRunMode.remotePC)
+    // MARK: - Top Header Section
+    private var topHeaderSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("AI VIDEO CREATOR")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.cyan)
+                    .tracking(1.0)
+                Text("Viral TikTok & Shorts Studio")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
             }
-            .pickerStyle(.segmented)
 
-            HStack {
-                if api.runMode == .onDevice {
-                    Image(systemName: "bolt.shield.fill")
-                        .foregroundColor(.cyan)
-                    Text("100% On-Device • No PC or Wi-Fi Needed")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.cyan)
-                } else {
-                    Image(systemName: api.isConnected ? "wifi" : "wifi.exclamationmark")
-                        .foregroundColor(api.isConnected ? .green : .orange)
-                    Text(api.isConnected ? "Connected to PC Studio" : "PC Server Offline - Tap top bar to connect")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(api.isConnected ? .green : .orange)
-                }
-                Spacer()
-                Text("9:16 1080p")
-                    .font(.system(size: 10, weight: .bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.purple.opacity(0.3))
-                    .foregroundColor(.purple)
-                    .cornerRadius(6)
-            }
+            Spacer()
+
+            LiquidGlassPill(text: "9:16 Vertical", icon: "iphone.gen3", tintColor: .purple)
         }
-        .padding(12)
-        .background(Color(red: 0.08, green: 0.10, blue: 0.16))
-        .cornerRadius(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(api.runMode == .onDevice ? Color.cyan.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(.vertical, 4)
     }
 
-    // MARK: - Source Picker
-    private var sourcePickerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Source", selection: $selectedSource) {
+    // MARK: - Mode Switcher Capsule
+    private var modeSwitcherCapsule: some View {
+        HStack(spacing: 6) {
+            modeButton(mode: .onDevice, title: "📱 Standalone (iPhone)", subtitle: "No PC Needed")
+            modeButton(mode: .remotePC, title: "💻 PC Server", subtitle: "Local Wi-Fi")
+        }
+        .padding(4)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.8))
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func modeButton(mode: AppRunMode, title: String, subtitle: String) -> some View {
+        let isSelected = api.runMode == mode
+
+        return Button(action: {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                api.runMode = mode
+            }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }) {
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: isSelected ? .bold : .medium, design: .rounded))
+                    .foregroundColor(isSelected ? .black : .white.opacity(0.8))
+                Text(subtitle)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(isSelected ? .black.opacity(0.75) : .gray)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                Group {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(
+                                LinearGradient(colors: [Color.cyan, Color(red: 0.4, green: 0.7, blue: 1.0)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                            .shadow(color: Color.cyan.opacity(0.35), radius: 6, y: 2)
+                    } else {
+                        Color.clear
+                    }
+                }
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Source Selector Bar
+    private var sourceSelectorBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
                 ForEach(SourceType.allCases) { src in
-                    Text(src.rawValue).tag(src)
+                    let isSelected = selectedSource == src
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedSource = src
+                        }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: src.icon)
+                                .font(.system(size: 12, weight: .bold))
+                            Text(src.rawValue)
+                                .font(.system(size: 12, weight: isSelected ? .bold : .semibold, design: .rounded))
+                        }
+                        .foregroundColor(isSelected ? .black : .white.opacity(0.85))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            ZStack {
+                                if isSelected {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(
+                                            LinearGradient(colors: [Color.cyan, Color(red: 0.2, green: 0.8, blue: 1.0)], startPoint: .leading, endPoint: .trailing)
+                                        )
+                                        .shadow(color: Color.cyan.opacity(0.4), radius: 8, y: 3)
+                                } else {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(.ultraThinMaterial)
+                                        .opacity(0.8)
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(Color(red: 0.10, green: 0.12, blue: 0.18).opacity(0.7))
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                                }
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .pickerStyle(.segmented)
+            .padding(.horizontal, 2)
+        }
+    }
 
-            // Source Specific Controls
+    // MARK: - Active Source Subviews
+    private var activeSourceControls: some View {
+        Group {
             switch selectedSource {
             case .curated:
                 curatedStoriesSubView
@@ -213,17 +300,20 @@ public struct CreatorView: View {
                 EmptyView()
             }
         }
-        .padding(14)
-        .background(Color(red: 0.08, green: 0.10, blue: 0.15))
-        .cornerRadius(14)
     }
 
-    // Curated Subview
+    // Curated Stories Carousel
     private var curatedStoriesSubView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Top Viral TikTok Story Scripts (Ready to Generate)")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.cyan)
+            HStack {
+                Text("🔥 Top 5 High-Retention Scripts")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(.cyan)
+                Spacer()
+                Text("1-Tap Select")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.gray)
+            }
 
             let stories = [
                 ("garlic", "Wedding Garlic Bread Drama", "My sister claimed to be severely allergic to garlic for three years until I caught her eating garlic bread..."),
@@ -233,55 +323,78 @@ public struct CreatorView: View {
                 ("heist", "Antwerp Diamond Center Heist", "How Italian masterminds pulled off the impossible $50,000,000 heist using women's hairspray...")
             ]
 
-            ForEach(stories, id: \.0) { item in
-                Button(action: {
-                    loadSpecificCuratedStory(item.0)
-                }) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.1)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.white)
-                            Text(item.2)
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                                .lineLimit(1)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(stories, id: \.0) { item in
+                        Button(action: {
+                            loadSpecificCuratedStory(item.0)
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        }) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(item.1)
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                Text(item.2)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.65))
+                                    .lineLimit(2)
+                            }
+                            .padding(10)
+                            .frame(width: 200, alignment: .leading)
+                            .background(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(.ultraThinMaterial)
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(Color(red: 0.12, green: 0.15, blue: 0.22).opacity(0.8))
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+                                }
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        Spacer()
-                        Image(systemName: "arrow.right.circle.fill")
-                            .foregroundColor(.cyan)
+                        .buttonStyle(.plain)
                     }
-                    .padding(10)
-                    .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                    .cornerRadius(10)
                 }
             }
         }
+        .padding(14)
+        .liquidGlassCard(cornerRadius: 20)
     }
 
     // Reddit Subview
     private var redditSubView: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             HStack {
-                TextField("Subreddit (e.g. AmItheAsshole)", text: $subreddit)
-                    .font(.system(size: 13))
-                    .padding(10)
-                    .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                    .cornerRadius(8)
-                    .foregroundColor(.white)
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Subreddit (e.g. AmItheAsshole)", text: $subreddit)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+                .padding(10)
+                .background(Color.black.opacity(0.35))
+                .cornerRadius(10)
 
                 Button(action: loadRedditStories) {
-                    if isLoadingSource {
-                        ProgressView().tint(.white)
-                    } else {
-                        Text("Scrub Hot")
-                            .font(.system(size: 13, weight: .bold))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Color.cyan)
-                            .foregroundColor(.black)
-                            .cornerRadius(8)
+                    HStack(spacing: 4) {
+                        if isLoadingSource {
+                            ProgressView().tint(.black)
+                        } else {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Text("Scrub")
+                                .font(.system(size: 12, weight: .bold))
+                        }
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .foregroundColor(.black)
+                    .cornerRadius(10)
                 }
             }
 
@@ -297,22 +410,30 @@ public struct CreatorView: View {
                 }
             }
         }
+        .padding(14)
+        .liquidGlassCard(cornerRadius: 20)
     }
 
     // AI Writer Subview
     private var aiWriterSubView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Theme", selection: $aiCategory) {
-                Text("🔥 AITA & Drama").tag("aita")
-                Text("💀 Petty Revenge").tag("revenge")
-                Text("👻 Creepypasta & Horror").tag("scary")
-                Text("🤫 Taboo Confessions").tag("confession")
-                Text("🧠 Dark Psychology Hacks").tag("lifehack")
-                Text("🌌 Shower Thoughts").tag("showerthoughts")
-                Text("🕵️ True Crime & Heists").tag("crime")
+            HStack {
+                Text("Select Category")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(.cyan)
+                Spacer()
+                Picker("Theme", selection: $aiCategory) {
+                    Text("🔥 AITA & Drama").tag("aita")
+                    Text("💀 Petty Revenge").tag("revenge")
+                    Text("👻 Creepypasta & Horror").tag("scary")
+                    Text("🤫 Taboo Confessions").tag("confession")
+                    Text("🧠 Dark Psychology Hacks").tag("lifehack")
+                    Text("🌌 Shower Thoughts").tag("showerthoughts")
+                    Text("🕵️ True Crime & Heists").tag("crime")
+                }
+                .pickerStyle(.menu)
+                .tint(.cyan)
             }
-            .pickerStyle(.menu)
-            .tint(.cyan)
 
             Button(action: generateAIStoryScript) {
                 HStack {
@@ -320,169 +441,174 @@ public struct CreatorView: View {
                         ProgressView().tint(.black)
                         Text("Writing Viral Script...")
                     } else {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "wand.and.stars")
                         Text("Write Viral AI Script (60s Hook & Twist)")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.cyan)
+                .padding(.vertical, 12)
+                .background(
+                    LinearGradient(
+                        colors: [Color.cyan, Color(red: 0.3, green: 0.7, blue: 1.0)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .foregroundColor(.black)
-                .cornerRadius(8)
+                .cornerRadius(12)
             }
         }
+        .padding(14)
+        .liquidGlassCard(cornerRadius: 20)
     }
 
     // Quora Subview
     private var quoraSubView: some View {
-        VStack(spacing: 10) {
-            HStack {
-                TextField("Search topic (e.g. secret hacks)", text: $quoraQuery)
-                    .font(.system(size: 13))
-                    .padding(10)
-                    .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                    .cornerRadius(8)
-                    .foregroundColor(.white)
+        HStack {
+            TextField("Search topic (e.g. secret hacks)", text: $quoraQuery)
+                .font(.system(size: 13))
+                .padding(10)
+                .background(Color.black.opacity(0.35))
+                .cornerRadius(10)
+                .foregroundColor(.white)
 
-                Button(action: loadQuoraStories) {
-                    Text("Search")
-                        .font(.system(size: 13, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.cyan)
-                        .foregroundColor(.black)
-                        .cornerRadius(8)
-                }
+            Button(action: loadQuoraStories) {
+                Text("Search")
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.cyan)
+                    .foregroundColor(.black)
+                    .cornerRadius(10)
             }
         }
+        .padding(14)
+        .liquidGlassCard(cornerRadius: 20)
     }
 
     // YouTube Subview
     private var youtubeSubView: some View {
-        VStack(spacing: 10) {
-            HStack {
-                TextField("Paste YouTube URL", text: $youtubeURL)
-                    .font(.system(size: 13))
-                    .padding(10)
-                    .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                    .cornerRadius(8)
-                    .foregroundColor(.white)
+        HStack {
+            TextField("Paste YouTube URL", text: $youtubeURL)
+                .font(.system(size: 13))
+                .padding(10)
+                .background(Color.black.opacity(0.35))
+                .cornerRadius(10)
+                .foregroundColor(.white)
 
-                Button(action: loadYouTubeTranscript) {
-                    Text("Get Script")
-                        .font(.system(size: 13, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.cyan)
-                        .foregroundColor(.black)
-                        .cornerRadius(8)
-                }
+            Button(action: loadYouTubeTranscript) {
+                Text("Get Script")
+                    .font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.cyan)
+                    .foregroundColor(.black)
+                    .cornerRadius(10)
             }
         }
+        .padding(14)
+        .liquidGlassCard(cornerRadius: 20)
     }
 
-    // MARK: - Story Editor
-    private var storyEditorSection: some View {
+    // MARK: - Story Editor Glass Card
+    private var storyEditorCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Viral Script")
-                    .font(.system(size: 14, weight: .bold))
+                Text("Story Script")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 Spacer()
-                Text(wordCountText)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.cyan)
+                LiquidGlassPill(text: wordCountText, icon: "clock.fill", tintColor: .cyan)
             }
 
             TextField("Title / Viral Hook (e.g. AITA for uninviting my friend...)", text: $storyTitle)
-                .font(.system(size: 14, weight: .semibold))
-                .padding(10)
-                .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                .cornerRadius(8)
+                .font(.system(size: 14, weight: .bold))
+                .padding(12)
+                .background(Color.black.opacity(0.30))
+                .cornerRadius(10)
                 .foregroundColor(.white)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 .onChange(of: storyTitle) { _ in triggerAnalysis() }
 
             TextEditor(text: $storyText)
                 .font(.system(size: 13))
-                .frame(minHeight: 120, maxHeight: 180)
-                .padding(6)
+                .frame(minHeight: 110, maxHeight: 150)
+                .padding(8)
                 .scrollContentBackground(.hidden)
-                .background(Color(red: 0.12, green: 0.14, blue: 0.20))
-                .cornerRadius(8)
+                .background(Color.black.opacity(0.30))
+                .cornerRadius(10)
                 .foregroundColor(.white)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 .onChange(of: storyText) { _ in triggerAnalysis() }
         }
-        .padding(14)
-        .background(Color(red: 0.08, green: 0.10, blue: 0.15))
-        .cornerRadius(14)
+        .padding(16)
+        .liquidGlassCard(cornerRadius: 22)
     }
 
-    // MARK: - AI Match Card
+    // MARK: - AI Match Holographic Glass Card
     private func aiMatchCard(_ match: AIMatch) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "brain.head.profile")
+                Image(systemName: "sparkles")
                     .foregroundColor(.pink)
                 Text("AI Persona & Tone Match")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundColor(.pink)
                 Spacer()
-                Text(match.vibe)
-                    .font(.system(size: 11, weight: .bold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.pink.opacity(0.2))
-                    .foregroundColor(.pink)
-                    .cornerRadius(8)
+                LiquidGlassPill(text: match.vibe, icon: "waveform", tintColor: .pink)
             }
 
             Text(match.rationale)
-                .font(.system(size: 12))
-                .foregroundColor(Color(red: 0.85, green: 0.88, blue: 0.95))
+                .font(.system(size: 11))
+                .foregroundColor(Color.white.opacity(0.85))
 
-            HStack(spacing: 8) {
-                Label(match.voice_name, systemImage: "waveform")
+            HStack(spacing: 6) {
+                Label(match.voice_name, systemImage: "mic.fill")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(Color.white.opacity(0.08))
-                    .cornerRadius(6)
+                    .cornerRadius(8)
 
-                Label(match.bg_name, systemImage: "video")
+                Label(match.bg_name, systemImage: "video.fill")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(Color.white.opacity(0.08))
-                    .cornerRadius(6)
+                    .cornerRadius(8)
 
-                Label(match.color_name, systemImage: "paintpalette")
+                Label(match.color_name, systemImage: "paintpalette.fill")
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(Color.white.opacity(0.08))
-                    .cornerRadius(6)
+                    .cornerRadius(8)
             }
             .foregroundColor(.white)
         }
-        .padding(12)
-        .background(Color(red: 0.13, green: 0.09, blue: 0.15))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.pink.opacity(0.3), lineWidth: 1)
+        .padding(14)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(red: 0.16, green: 0.08, blue: 0.16).opacity(0.70))
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(colors: [Color.pink.opacity(0.6), Color.purple.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1.2
+                    )
+            }
         )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    // MARK: - Voice & Background Controls
-    private var controlsSection: some View {
-        VStack(spacing: 14) {
-            // Voice Picker
-            HStack {
-                Text("Voice Actor")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                Spacer()
+    // MARK: - Voice, Pacing & B-Roll Controls Card
+    private var controlsGlassCard: some View {
+        VStack(spacing: 12) {
+            // Voice Row
+            controlRow(title: "Voice Actor", icon: "waveform") {
                 Picker("Voice", selection: $selectedVoice) {
                     Text("✨ AI Auto-Select").tag("auto")
                     Text("Samantha (Natural US)").tag("en-US-Samantha")
@@ -498,12 +624,10 @@ public struct CreatorView: View {
                 .tint(.cyan)
             }
 
-            // Speed Picker
-            HStack {
-                Text("Pacing Speed")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                Spacer()
+            Divider().background(Color.white.opacity(0.08))
+
+            // Speed Row
+            controlRow(title: "Pacing Speed", icon: "gauge.with.needle.fill") {
                 Picker("Speed", selection: $selectedRate) {
                     Text("✨ AI Optimal").tag("auto")
                     Text("Normal (1.0x)").tag("+0%")
@@ -515,15 +639,13 @@ public struct CreatorView: View {
                 .tint(.cyan)
             }
 
-            // Subtitle Style
-            HStack {
-                Text("Subtitle Style")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                Spacer()
+            Divider().background(Color.white.opacity(0.08))
+
+            // Subtitle Style Row
+            controlRow(title: "Subtitle Color", icon: "captions.bubble.fill") {
                 Picker("Style", selection: $selectedColor) {
                     Text("✨ AI Auto-Style").tag("auto")
-                    Text("CapCut Karaoke (Yellow)").tag("&H00FFFF&")
+                    Text("TikTok Yellow").tag("&H00FFFF&")
                     Text("Neon Lime Green").tag("&H00FF00&")
                     Text("Electric Cyan").tag("&HFFFF00&")
                     Text("Hot Coral Red").tag("&H0000FF&")
@@ -532,121 +654,127 @@ public struct CreatorView: View {
                 .tint(.cyan)
             }
 
-            // Background Picker
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("B-Roll Footage")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Picker("Background", selection: $selectedBackground) {
-                        Text("✨ AI Auto-Select").tag("auto")
-                        Section("🎮 Gaming Viral") {
-                            Text("Minecraft Parkour (9:16)").tag("minecraft_parkour")
-                            Text("Subway Surfers Fast Run").tag("subway_surfers")
-                            Text("GTA V Mega Ramp Stunts").tag("gta_stunts")
-                            Text("BeamNG Car Crashes").tag("beamng_crashes")
-                            Text("Roblox Tower Obby").tag("roblox_obby")
-                            Text("Temple Run 2 Classic").tag("temple_run")
-                            Text("CS:GO / CS2 Smooth Surf").tag("csgo_surf")
-                        }
-                        Section("🧼 Satisfying ASMR") {
-                            Text("Kinetic Sand & Soap ASMR").tag("satisfying_asmr")
-                            Text("Hydraulic Press Crushing").tag("hydraulic_press")
-                            Text("Slime Crunch ASMR").tag("slime_asmr")
-                            Text("Gravity Marble Run").tag("marble_run")
-                        }
-                        Section("🌌 Aesthetic & Procedural (100% Offline)") {
-                            Text("Cyberpunk Synthwave Drive").tag("synthwave_drive")
-                            Text("Neon Cyber Grid (AI Procedural)").tag("neon_motion")
-                            Text("Dark Atmospheric Smoke (AI Procedural)").tag("dark_cinematic")
-                            Text("Cosmic Starfield Warp (AI Procedural)").tag("cosmic_warp")
-                            Text("Crimson Suspense Pulse (AI Procedural)").tag("crimson_pulse")
-                        }
+            Divider().background(Color.white.opacity(0.08))
+
+            // Background Row
+            controlRow(title: "B-Roll Footage", icon: "film.fill") {
+                Picker("Background", selection: $selectedBackground) {
+                    Text("✨ AI Auto-Select").tag("auto")
+                    Section("🎮 Gaming Viral") {
+                        Text("Minecraft Parkour (9:16)").tag("minecraft_parkour")
+                        Text("Subway Surfers Fast Run").tag("subway_surfers")
+                        Text("GTA V Mega Ramp Stunts").tag("gta_stunts")
+                        Text("BeamNG Car Crashes").tag("beamng_crashes")
+                        Text("Roblox Tower Obby").tag("roblox_obby")
+                        Text("Temple Run 2 Classic").tag("temple_run")
+                        Text("CS:GO / CS2 Smooth Surf").tag("csgo_surf")
                     }
-                    .pickerStyle(.menu)
-                    .tint(.cyan)
+                    Section("🧼 Satisfying ASMR") {
+                        Text("Kinetic Sand & Soap ASMR").tag("satisfying_asmr")
+                        Text("Hydraulic Press Crushing").tag("hydraulic_press")
+                        Text("Slime Crunch ASMR").tag("slime_asmr")
+                        Text("Gravity Marble Run").tag("marble_run")
+                    }
+                    Section("🌌 Aesthetic & Procedural (100% Offline)") {
+                        Text("Cyberpunk Synthwave Drive").tag("synthwave_drive")
+                        Text("Neon Cyber Grid (AI Procedural)").tag("neon_motion")
+                        Text("Dark Atmospheric Smoke (AI Procedural)").tag("dark_cinematic")
+                        Text("Cosmic Starfield Warp (AI Procedural)").tag("cosmic_warp")
+                        Text("Crimson Suspense Pulse (AI Procedural)").tag("crimson_pulse")
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(.cyan)
+            }
+
+            // Photos Picker Button
+            HStack {
+                PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "photo.badge.plus.fill")
+                        Text("Pick Video From iPhone Photos")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.cyan)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.cyan.opacity(0.12))
+                    .cornerRadius(10)
                 }
 
-                // Photos Picker for Custom Background
-                HStack {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "photo.badge.plus")
-                            Text("Use Video From My iPhone Photos")
-                                .font(.system(size: 12, weight: .semibold))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.08))
-                        .foregroundColor(.cyan)
-                        .cornerRadius(8)
-                    }
-
-                    if api.customBackgroundURL != nil {
-                        Spacer()
-                        HStack(spacing: 4) {
-                            Text("📷 Custom Video Active")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.green)
-                            Button(action: {
-                                api.customBackgroundURL = nil
-                                selectedPhotoItem = nil
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.gray)
-                            }
+                if api.customBackgroundURL != nil {
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("📹 Custom Active")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.green)
+                        Button(action: {
+                            api.customBackgroundURL = nil
+                            selectedPhotoItem = nil
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
                         }
                     }
                 }
             }
+            .padding(.top, 4)
         }
-        .padding(14)
-        .background(Color(red: 0.08, green: 0.10, blue: 0.15))
-        .cornerRadius(14)
+        .padding(16)
+        .liquidGlassCard(cornerRadius: 22)
     }
 
-    // MARK: - Generate CTA
-    private var generateButtonSection: some View {
+    private func controlRow<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundColor(.cyan)
+                .frame(width: 20)
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+            Spacer()
+            content()
+        }
+    }
+
+    // MARK: - Generate Section
+    private var generateSection: some View {
         VStack(spacing: 12) {
             if api.isGenerating {
                 VStack(spacing: 8) {
                     ProgressView(value: api.generationPercent, total: 1.0)
                         .tint(.cyan)
-                    Text(api.generationProgressText)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.cyan)
-                }
-                .padding(14)
-                .background(Color(red: 0.08, green: 0.12, blue: 0.20))
-                .cornerRadius(12)
-            }
-
-            Button(action: startGeneration) {
-                HStack(spacing: 8) {
-                    if api.isGenerating {
-                        ProgressView().tint(.black)
-                        Text("RENDERING...")
-                            .fontWeight(.black)
-                    } else {
-                        Image(systemName: "bolt.fill")
-                        Text("GENERATE VIRAL TIKTOK VIDEO")
-                            .font(.system(size: 14, weight: .heavy))
+                    HStack {
+                        Text(api.generationProgressText)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.cyan)
+                        Spacer()
+                        Text("\(Int(api.generationPercent * 100))%")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(LinearGradient(colors: [Color.cyan, Color(red: 0.3, green: 0.7, blue: 1.0), Color.pink], startPoint: .leading, endPoint: .trailing))
-                .foregroundColor(.black)
-                .cornerRadius(14)
-                .shadow(color: .cyan.opacity(0.4), radius: 10, y: 4)
+                .padding(14)
+                .liquidGlassCard(cornerRadius: 16)
             }
+
+            GlowingLiquidCTA(
+                title: "GENERATE VIRAL TIKTOK VIDEO",
+                subtitle: api.runMode == .onDevice ? "⚡ 100% On-Device • Auto-Saves to Camera Roll" : "💻 Fast Server Rendering",
+                isLoading: api.isGenerating,
+                progressText: api.generationProgressText,
+                action: startGeneration
+            )
             .disabled(api.isGenerating || storyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             if let error = errorMessage {
                 Text(error)
                     .font(.system(size: 12))
                     .foregroundColor(.red)
+                    .padding(8)
+                    .background(Color.red.opacity(0.12))
+                    .cornerRadius(8)
             }
         }
     }
@@ -668,7 +796,7 @@ public struct CreatorView: View {
         analyzeTask?.cancel()
         guard storyText.count > 25 else { return }
         analyzeTask = Task {
-            try? await Task.sleep(nanoseconds: 400_000_000)
+            try? await Task.sleep(nanoseconds: 350_000_000)
             if Task.isCancelled { return }
             do {
                 let match = try await api.analyzeStory(story: storyText, title: storyTitle)

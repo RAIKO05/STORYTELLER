@@ -26,92 +26,132 @@ public struct VideoPlayerSheet: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                // Liquid Mesh Canvas
+                LiquidMeshBackground()
 
-                VStack(spacing: 16) {
-                    // Vertical 9:16 Video View
-                    if let player = player {
-                        VideoPlayer(player: player)
-                            .aspectRatio(9/16, contentMode: .fit)
-                            .cornerRadius(18)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(Color(red: 0.2, green: 0.25, blue: 0.35), lineWidth: 2)
-                            )
-                            .shadow(color: .cyan.opacity(0.3), radius: 12)
-                            .padding(.horizontal, 24)
-                    } else {
-                        Rectangle()
-                            .fill(Color(red: 0.1, green: 0.1, blue: 0.15))
-                            .aspectRatio(9/16, contentMode: .fit)
-                            .cornerRadius(18)
-                            .overlay(ProgressView().tint(.white))
-                            .padding(.horizontal, 24)
+                VStack(spacing: 14) {
+                    // 9:16 Vertical Video Player Container
+                    ZStack {
+                        if let player = player {
+                            VideoPlayer(player: player)
+                                .aspectRatio(9/16, contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [
+                                                    Color.cyan.opacity(0.6),
+                                                    Color.purple.opacity(0.3),
+                                                    Color.white.opacity(0.1)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                                .shadow(color: Color.black.opacity(0.5), radius: 24, y: 12)
+                                .shadow(color: Color.cyan.opacity(0.2), radius: 30, y: 4)
+                        } else {
+                            Rectangle()
+                                .fill(Color.black.opacity(0.5))
+                                .aspectRatio(9/16, contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .overlay(ProgressView().tint(.cyan))
+                        }
                     }
+                    .padding(.horizontal, 28)
+                    .padding(.top, 4)
 
-                    // Action Buttons Row
+                    // Floating Liquid Glass Action Controls
                     VStack(spacing: 10) {
-                        // 1. Save to Photos Button
+                        // 1. Primary Save to Photos Status Button
                         Button(action: saveToCameraRoll) {
-                            HStack {
+                            HStack(spacing: 8) {
                                 if isSaving {
                                     ProgressView().tint(.black)
                                 } else {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text(saveMessage ?? (result.localFileURL != nil ? "✅ Saved in iPhone Photos!" : "Save to iPhone Photos (Camera Roll)"))
-                                        .fontWeight(.bold)
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                    Text(saveMessage ?? (result.localFileURL != nil ? "SAVED IN PHOTOS ✅" : "SAVE TO IPHONE PHOTOS"))
+                                        .font(.system(size: 14, weight: .heavy, design: .rounded))
                                 }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(LinearGradient(colors: [Color.green, Color(red: 0.2, green: 0.8, blue: 0.4)], startPoint: .leading, endPoint: .trailing))
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.0, green: 0.95, blue: 0.6),
+                                        Color(red: 0.0, green: 0.85, blue: 1.0)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .foregroundColor(.black)
-                            .cornerRadius(12)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: Color.green.opacity(0.35), radius: 10, y: 4)
                         }
                         .disabled(isSaving)
+                        .buttonStyle(LiquidGlassButtonStyle())
 
-                        // 2. Copy Caption & Hashtags
-                        Button(action: copyCaption) {
-                            HStack {
-                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                                Text(isCopied ? "Copied to Clipboard!" : "Copy Caption & Viral Hashtags")
-                                    .fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color(red: 0.12, green: 0.16, blue: 0.24))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                        }
-
-                        // 3. Native Share to TikTok / Reels / Shorts
+                        // 2. Share to TikTok / Reels / Shorts Button
                         if let url = fullVideoURL {
                             ShareLink(item: url, message: Text("\(result.caption) \(result.hashtags)")) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Post to TikTok / Reels / Shorts / AirDrop")
+                                HStack(spacing: 8) {
+                                    Image(systemName: "paperplane.fill")
                                         .font(.system(size: 14, weight: .bold))
+                                    Text("Post to TikTok / Reels / Shorts")
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
                                 }
-                                .foregroundColor(.cyan)
-                                .padding(.top, 4)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 13)
+                                .foregroundColor(.white)
+                                .background(
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(.ultraThinMaterial)
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(Color(red: 0.12, green: 0.15, blue: 0.24).opacity(0.85))
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                                    }
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
+                            .buttonStyle(LiquidGlassButtonStyle())
+                        }
+
+                        // 3. Copy Caption & Viral Hashtags
+                        Button(action: copyCaption) {
+                            HStack(spacing: 6) {
+                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc.fill")
+                                    .font(.system(size: 12))
+                                Text(isCopied ? "Copied to Clipboard!" : "Copy Caption & Viral Tags")
+                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundColor(.cyan)
+                            .padding(.vertical, 6)
                         }
                     }
-                    .padding(.horizontal, 24)
-
-                    Spacer(minLength: 10)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, 12)
                 }
-                .padding(.top, 12)
             }
             .navigationTitle("Viral Video Ready")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(action: {
                         player?.pause()
                         dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white.opacity(0.75))
                     }
-                    .foregroundColor(.white)
                 }
             }
             .onAppear {
@@ -147,7 +187,8 @@ public struct VideoPlayerSheet: View {
         Task {
             do {
                 try await api.saveVideoToCameraRoll(videoRelativeURL: url.absoluteString)
-                saveMessage = "Saved to Photos!"
+                saveMessage = "SAVED TO PHOTOS! ✅"
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
             } catch {
                 saveMessage = "Error: \(error.localizedDescription)"
             }

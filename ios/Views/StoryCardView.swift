@@ -12,47 +12,77 @@ public struct StoryCardView: View {
     }
 
     public var body: some View {
-        Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 6) {
+        Button(action: {
+            onSelect()
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(story.title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
                 Text(story.story)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(red: 0.7, green: 0.75, blue: 0.85))
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.white.opacity(0.65))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     if let sub = story.subreddit {
-                        Text("r/\(sub)")
-                            .font(.system(size: 11, weight: .semibold))
+                        Text(sub.hasPrefix("r/") ? sub : "r/\(sub)")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.cyan.opacity(0.12))
+                            .cornerRadius(6)
                     } else if let topic = story.topic {
                         Text(topic)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundColor(.purple)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.12))
+                            .cornerRadius(6)
                     }
 
                     if let up = story.upvotes {
-                        Text("👍 \(up)")
-                            .font(.system(size: 11))
+                        Text("🔥 \(up)")
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.gray)
                     }
 
                     Spacer()
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right.circle")
+                        .font(.system(size: 13))
+                        .foregroundColor(isSelected ? .cyan : .gray.opacity(0.5))
                 }
             }
             .padding(12)
-            .background(isSelected ? Color.cyan.opacity(0.15) : Color(red: 0.09, green: 0.12, blue: 0.18))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.cyan : Color(red: 0.16, green: 0.20, blue: 0.30), lineWidth: 1)
+            .frame(width: 240, alignment: .leading)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.7)
+
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(isSelected ? Color.cyan.opacity(0.14) : Color(red: 0.10, green: 0.12, blue: 0.18).opacity(0.75))
+
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            isSelected ?
+                                LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing) :
+                                LinearGradient(colors: [Color.white.opacity(0.2), Color.white.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: isSelected ? 1.6 : 1.0
+                        )
+                }
             )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: isSelected ? Color.cyan.opacity(0.2) : Color.black.opacity(0.25), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
     }

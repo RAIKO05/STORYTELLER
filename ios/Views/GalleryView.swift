@@ -11,25 +11,39 @@ public struct GalleryView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.05, green: 0.06, blue: 0.09).ignoresSafeArea()
+                // Liquid Mesh Background
+                LiquidMeshBackground()
 
                 if isLoading {
                     ProgressView().tint(.cyan)
                 } else if videos.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "film.stack")
-                            .font(.system(size: 48))
-                            .foregroundColor(.gray)
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.cyan.opacity(0.12))
+                                .frame(width: 80, height: 80)
+                                .blur(radius: 6)
+                            Image(systemName: "film.stack")
+                                .font(.system(size: 38))
+                                .foregroundColor(.cyan)
+                        }
+
                         Text("No Videos Generated Yet")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
-                        Text(api.runMode == .onDevice ? "Create your first viral video right on your iPhone!" : "Create your first viral video in the Studio tab!")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
+
+                        Text("Create your first viral video right on your iPhone!")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.65))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     }
+                    .padding(32)
+                    .liquidGlassCard(cornerRadius: 24)
+                    .padding(.horizontal, 24)
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: 14) {
                             ForEach(videos) { vid in
                                 Button(action: {
                                     self.selectedVideo = GenerationResult(
@@ -44,37 +58,37 @@ public struct GalleryView: View {
                                         ai_match: nil,
                                         localFileURL: vid.url.starts(with: "file://") ? vid.url : nil
                                     )
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                 }) {
-                                    HStack(spacing: 12) {
+                                    HStack(spacing: 14) {
+                                        // Video Thumbnail Glass Container
                                         ZStack {
-                                            RoundedRectangle(cornerRadius: 8)
+                                            RoundedRectangle(cornerRadius: 14, style: .continuous)
                                                 .fill(Color(red: 0.12, green: 0.16, blue: 0.24))
-                                                .frame(width: 60, height: 80)
+                                                .frame(width: 64, height: 86)
+
                                             Image(systemName: "play.circle.fill")
-                                                .font(.system(size: 24))
-                                                .foregroundColor(.cyan)
+                                                .font(.system(size: 28))
+                                                .foregroundStyle(
+                                                    LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                                )
+                                                .shadow(color: Color.cyan.opacity(0.4), radius: 6)
                                         }
 
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .leading, spacing: 6) {
                                             Text(vid.filename.replacingOccurrences(of: ".mp4", with: ""))
-                                                .font(.system(size: 13, weight: .bold))
+                                                .font(.system(size: 13, weight: .bold, design: .rounded))
                                                 .foregroundColor(.white)
                                                 .lineLimit(2)
                                                 .multilineTextAlignment(.leading)
 
                                             HStack(spacing: 8) {
                                                 Text("\(String(format: "%.1f", vid.size_mb)) MB")
-                                                    .font(.system(size: 11, design: .monospaced))
+                                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                                     .foregroundColor(.gray)
 
                                                 if vid.url.starts(with: "file://") {
-                                                    Text("📱 On-Device")
-                                                        .font(.system(size: 10, weight: .bold))
-                                                        .padding(.horizontal, 5)
-                                                        .padding(.vertical, 2)
-                                                        .background(Color.cyan.opacity(0.2))
-                                                        .foregroundColor(.cyan)
-                                                        .cornerRadius(4)
+                                                    LiquidGlassPill(text: "On-Device", icon: "iphone", tintColor: .cyan)
                                                 }
                                             }
                                         }
@@ -82,18 +96,20 @@ public struct GalleryView: View {
                                         Spacer()
 
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.gray)
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.white.opacity(0.4))
                                     }
-                                    .padding(10)
-                                    .background(Color(red: 0.08, green: 0.10, blue: 0.15))
-                                    .cornerRadius(12)
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.16, green: 0.20, blue: 0.30), lineWidth: 1))
+                                    .padding(12)
+                                    .liquidGlassCard(cornerRadius: 18)
                                 }
                                 .buttonStyle(.plain)
                             }
+
+                            // Extra bottom padding for floating tab bar
+                            Spacer(minLength: 90)
                         }
-                        .padding(16)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
                     }
                 }
             }
@@ -103,6 +119,7 @@ public struct GalleryView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: refreshGallery) {
                         Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.cyan)
                     }
                 }
