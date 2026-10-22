@@ -289,7 +289,7 @@ public struct CreatorView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(redditStories.prefix(5)) { item in
-                            StoryCardView(story: item) {
+                            StoryCardView(story: item, isSelected: storyTitle == item.title) {
                                 selectStory(item.title, item.story)
                             }
                         }

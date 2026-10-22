@@ -132,7 +132,8 @@ public struct PresetsResponse: Codable {
     }
 }
 
-public struct GenerationResult: Codable {
+public struct GenerationResult: Identifiable, Codable {
+    public var id: String { job_id }
     public var job_id: String
     public var title: String
     public var duration: Double

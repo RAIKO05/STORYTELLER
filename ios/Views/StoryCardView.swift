@@ -5,6 +5,12 @@ public struct StoryCardView: View {
     public let isSelected: Bool
     public let onSelect: () -> Void
 
+    public init(story: Story, isSelected: Bool = false, onSelect: @escaping () -> Void) {
+        self.story = story
+        self.isSelected = isSelected
+        self.onSelect = onSelect
+    }
+
     public var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
