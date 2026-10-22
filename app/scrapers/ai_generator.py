@@ -104,11 +104,11 @@ class AIViralStoryGenerator:
         full_text = f"{title} {story_text}".lower()
 
         # Keywords scoring
-        mystery_keywords = ["creepy", "haunted", "ship", "ocean", "disappeared", "abandoned", "night", "dark", "secret", "rules", "never", "police", "warning", "dead", "footprints", "forest", "vanished"]
+        mystery_keywords = ["creepy", "haunted", "ship", "ocean", "disappeared", "abandoned", "night", "dark", "secret", "rules", "never", "police", "warning", "dead", "footprints", "forest", "vanished", "space", "stars", "alien"]
         drama_keywords = ["husband", "wife", "wedding", "bride", "sister", "mother-in-law", "mil", "in-laws", "family", "cheating", "baby", "toxic", "relationship", "dilemma", "pregnant", "divorce", "jerk", "asshole", "bad guy"]
-        revenge_keywords = ["boss", "fired", "coworker", "job", "salary", "client", "office", "company", "promoted", "quit", "compliance", "landlord", "landlady", "paycheck", "hr", "corporate", "lawyer", "million"]
-        confession_keywords = ["secret", "confession", "nobody knows", "guilt", "lied", "lottery", "cash", "money", "ashamed", "years ago", "truth", "discovered", "stole", "hidden"]
-        humor_keywords = ["tifu", "accidentally", "funny", "screwed up", "zoom", "embarrassing", "stupid", "hilarious", "laugh", "haircut"]
+        revenge_keywords = ["boss", "fired", "coworker", "job", "salary", "client", "office", "company", "promoted", "quit", "compliance", "landlord", "landlady", "paycheck", "hr", "corporate", "lawyer", "million", "destroy", "wreck", "car", "crash"]
+        confession_keywords = ["secret", "confession", "nobody knows", "guilt", "lied", "lottery", "cash", "money", "ashamed", "years ago", "truth", "discovered", "stole", "hidden", "night drive", "wealth", "quiet"]
+        humor_keywords = ["tifu", "accidentally", "funny", "screwed up", "zoom", "embarrassing", "stupid", "hilarious", "laugh", "haircut", "roblox", "game", "chaos", "chase"]
 
         def score(keywords):
             return sum(1 for kw in keywords if re.search(rf"\b{kw}\b", full_text))
@@ -129,8 +129,9 @@ class AIViralStoryGenerator:
         scores.sort(key=lambda x: x[1], reverse=True)
         top_vibe = scores[0][0] if scores[0][1] > 0 else "drama"
 
-        # Persona & setting mappings
         if top_vibe == "mystery":
+            bg_choice = "aurora_galaxy" if any(w in full_text for w in ["space", "sky", "alien", "stars"]) else "dark_cinematic"
+            bg_name = "Deep Space Galaxy & Aurora" if bg_choice == "aurora_galaxy" else "Dark Atmospheric Mystery"
             return {
                 "vibe": "Spooky / Mystery / Unsolved",
                 "vibe_key": "mystery",
@@ -139,12 +140,15 @@ class AIViralStoryGenerator:
                 "recommended_rate": "+5%",
                 "recommended_color": "&HFFFF00&", # Electric Cyan
                 "color_name": "Electric Cyan",
-                "recommended_bg": "dark_cinematic",
-                "bg_name": "Dark Atmospheric Mystery",
-                "subtitle_style": "single", # Quick tense single words
+                "recommended_bg": bg_choice,
+                "bg_name": bg_name,
+                "subtitle_style": "single",
                 "rationale": "High suspense and tension detected. Eric's deep, steady delivery paired with deliberate +5% pacing and Electric Cyan text maximizes dramatic retention."
             }
         elif top_vibe == "revenge":
+            # Check if car crash or hydraulic destruction
+            bg_choice = "beamng_crashes" if any(w in full_text for w in ["car", "crash", "smash", "destroy"]) else "gta_stunts"
+            bg_name = "BeamNG.drive Car Crashes & Stunts" if bg_choice == "beamng_crashes" else "GTA V Mega Ramp Stunts"
             return {
                 "vibe": "Epic Revenge / Workplace Drama",
                 "vibe_key": "revenge",
@@ -153,12 +157,15 @@ class AIViralStoryGenerator:
                 "recommended_rate": "+15%",
                 "recommended_color": "&H00FF00&", # Neon Lime Green
                 "color_name": "Neon Lime Green",
-                "recommended_bg": "gta_stunts",
-                "bg_name": "GTA V Mega Ramp Stunts",
+                "recommended_bg": bg_choice,
+                "bg_name": bg_name,
                 "subtitle_style": "karaoke",
                 "rationale": "High-energy revenge narrative detected. Guy's confident voice at +15% speed with high-contrast Neon Lime highlights keeps viewers hooked through the climax."
             }
         elif top_vibe == "confession":
+            # Synthwave drive for late night or ASMR for intimate secrets
+            bg_choice = "synthwave_drive" if any(w in full_text for w in ["drive", "lottery", "cash", "million", "night", "city"]) else "satisfying_asmr"
+            bg_name = "Cyberpunk Synthwave Sunset Night Drive" if bg_choice == "synthwave_drive" else "Satisfying Kinetic Sand & Soap Cutting"
             return {
                 "vibe": "Deep Secret / Personal Confession",
                 "vibe_key": "confession",
@@ -167,32 +174,35 @@ class AIViralStoryGenerator:
                 "recommended_rate": "+10%",
                 "recommended_color": "&H00FFFF&", # TikTok Yellow
                 "color_name": "TikTok Neon Yellow",
-                "recommended_bg": "satisfying_asmr",
-                "bg_name": "Satisfying Kinetic Sand / Soap Cutting",
+                "recommended_bg": bg_choice,
+                "bg_name": bg_name,
                 "subtitle_style": "karaoke",
-                "rationale": "Intimate storytelling tone detected. Christopher's rich voice creates strong emotional trust, paired with mesmerizing ASMR visuals for maximum watch-time."
+                "rationale": "Intimate storytelling tone detected. Christopher's rich voice creates strong emotional trust, paired with mesmerizing visuals for maximum watch-time."
             }
         elif top_vibe == "humor":
+            bg_choice = "temple_run" if "chase" in full_text else "subway_surfers"
+            bg_name = "Temple Run 2 Classic Run" if bg_choice == "temple_run" else "Subway Surfers Fast Run"
             return {
                 "vibe": "Comedy / Chaos / TIFU",
                 "vibe_key": "humor",
                 "recommended_voice": "en-US-GuyNeural",
                 "voice_name": "Guy (Energetic Viral Narrator)",
                 "recommended_rate": "+18%",
-                "recommended_color": "&H00FFFF&", # Yellow
+                "recommended_color": "&H00FFFF&",
                 "color_name": "TikTok Neon Yellow",
-                "recommended_bg": "subway_surfers",
-                "bg_name": "Subway Surfers Fast Gameplay",
+                "recommended_bg": bg_choice,
+                "bg_name": bg_name,
                 "subtitle_style": "single",
                 "rationale": "Fast-paced comedic storytelling detected. Snappy +18% speed with high-velocity single word pops mirrors viral TikTok comedy formats."
             }
         else:
-            # Default Drama / AITA
-            # Check if female or male perspective
             female_words = ["my husband", "he wanted", "my boyfriend", "bride", "mother", "sister"]
             is_female = any(w in full_text for w in female_words)
             chosen_voice = "en-US-JennyNeural" if is_female else "en-US-ChristopherNeural"
             voice_name = "Jenny (Natural Conversational Female)" if is_female else "Christopher (Storyteller Male)"
+
+            bg_choice = "roblox_obby" if "teen" in full_text else "minecraft_parkour"
+            bg_name = "Roblox Tower Obby Parkour" if bg_choice == "roblox_obby" else "Minecraft Parkour (Vertical 9:16)"
 
             return {
                 "vibe": "Moral Dilemma / Relationship Drama",
@@ -200,18 +210,17 @@ class AIViralStoryGenerator:
                 "recommended_voice": chosen_voice,
                 "voice_name": voice_name,
                 "recommended_rate": "+12%",
-                "recommended_color": "&H00FFFF&", # Yellow
+                "recommended_color": "&H00FFFF&",
                 "color_name": "TikTok Neon Yellow",
-                "recommended_bg": "minecraft_parkour",
-                "bg_name": "Minecraft Parkour Vertical Gameplay",
+                "recommended_bg": bg_choice,
+                "bg_name": bg_name,
                 "subtitle_style": "karaoke",
-                "rationale": f"Relatable interpersonal drama detected. Matched with {voice_name} at +12% pacing over classic Minecraft Parkour to drive intense comment debates."
+                "rationale": f"Relatable interpersonal drama detected. Matched with {voice_name} at +12% pacing over {bg_name} to drive intense comment debates."
             }
 
     def generate_story(self, category: str = "aita", prompt_hint: str = "", target_duration: int = 60) -> Dict:
         """
         Generates a high-retention viral story script.
-        Uses Google Gemini API if key is present, otherwise uses our algorithmic viral template engine.
         """
         if self.api_key:
             try:

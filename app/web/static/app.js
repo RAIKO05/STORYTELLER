@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Populate Backgrounds
             bgSelect.innerHTML = presets.backgrounds.map(b => 
-                `<option value="${b.id}" ${b.id === "auto" ? "selected" : ""}>${b.name}</option>`
+                `<option value="${b.id}" ${b.id === "auto" ? "selected" : ""}>${b.category ? `[${b.category}] ` : ""}${b.name}</option>`
             ).join("");
 
             loadGallery();

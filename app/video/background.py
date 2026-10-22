@@ -8,35 +8,103 @@ import yt_dlp
 from app.config import BACKGROUNDS_DIR, VIDEO_WIDTH, VIDEO_HEIGHT
 
 THEMATIC_QUERIES = {
+    # 1. Gaming / High Retention
     "minecraft_parkour": {
-        "name": "Minecraft Parkour (Vertical)",
+        "name": "Minecraft Parkour (Vertical 9:16)",
+        "category": "Gaming",
         "query": "ytsearch1:minecraft parkour gameplay no commentary vertical 9:16",
         "filename": "minecraft_parkour.mp4",
         "default_url": "https://www.youtube.com/watch?v=s600FYgI5-s"
     },
     "subway_surfers": {
-        "name": "Subway Surfers (Vertical)",
+        "name": "Subway Surfers Fast Run",
+        "category": "Gaming",
         "query": "ytsearch1:subway surfers vertical gameplay no commentary copyright free",
         "filename": "subway_surfers.mp4",
         "default_url": "https://www.youtube.com/watch?v=hJcv2nZ8x84"
     },
     "gta_stunts": {
         "name": "GTA V Mega Ramp Stunts",
+        "category": "Gaming",
         "query": "ytsearch1:gta 5 mega ramp vertical gameplay no commentary",
         "filename": "gta_stunts.mp4",
         "default_url": "https://www.youtube.com/watch?v=P3b3AidldmA"
     },
+    "beamng_crashes": {
+        "name": "BeamNG.drive Car Crashes & Stunts",
+        "category": "Gaming",
+        "query": "ytsearch1:beamng drive car crashes vertical no commentary 9:16",
+        "filename": "beamng_crashes.mp4",
+        "default_url": "https://www.youtube.com/watch?v=LkOvBURqSUg"
+    },
+    "roblox_obby": {
+        "name": "Roblox Tower Obby Parkour",
+        "category": "Gaming",
+        "query": "ytsearch1:roblox obby gameplay vertical no commentary 9:16",
+        "filename": "roblox_obby.mp4",
+        "default_url": "https://www.youtube.com/watch?v=CVfvNKp_C8A"
+    },
+    "temple_run": {
+        "name": "Temple Run 2 Classic Run",
+        "category": "Gaming",
+        "query": "ytsearch1:temple run 2 gameplay vertical no commentary",
+        "filename": "temple_run.mp4",
+        "default_url": "https://www.youtube.com/watch?v=fuQf-iGCmKA"
+    },
+
+    # 2. Satisfying / ASMR
     "satisfying_asmr": {
-        "name": "Satisfying ASMR / Kinetic Sand",
+        "name": "Satisfying Kinetic Sand & Soap Cutting",
+        "category": "Satisfying ASMR",
         "query": "ytsearch1:satisfying kinetic sand soap cutting vertical 9:16",
         "filename": "satisfying_asmr.mp4",
         "default_url": "https://www.youtube.com/watch?v=3clqk2U3T9Y"
     },
+    "hydraulic_press": {
+        "name": "Hydraulic Press ASMR Crushing",
+        "category": "Satisfying ASMR",
+        "query": "ytsearch1:satisfying hydraulic press crushing vertical 9:16",
+        "filename": "hydraulic_press.mp4",
+        "default_url": "https://www.youtube.com/watch?v=ZZh1m7gARhM"
+    },
+    "power_washing": {
+        "name": "Oddly Satisfying Power Washing Cleaning",
+        "category": "Satisfying ASMR",
+        "query": "ytsearch1:satisfying power washing cleaning vertical 9:16",
+        "filename": "power_washing.mp4",
+        "default_url": "https://www.youtube.com/watch?v=3clqk2U3T9Y"
+    },
+
+    # 3. Aesthetic / Late Night / Driving
+    "synthwave_drive": {
+        "name": "Cyberpunk Synthwave Sunset Night Drive",
+        "category": "Aesthetic",
+        "query": "ytsearch1:synthwave sunset night drive loop vertical 9:16",
+        "filename": "synthwave_drive.mp4",
+        "default_url": "https://www.youtube.com/watch?v=7eTfyve4NXE"
+    },
+
+    # 4. Procedural AI Motion Backgrounds (100% Offline)
     "dark_cinematic": {
-        "name": "Dark Atmospheric Mystery",
-        "query": "ytsearch1:dark aesthetic vertical video background copyright free",
+        "name": "Dark Atmospheric Mystery (AI Procedural)",
+        "category": "AI Procedural",
+        "query": "",
         "filename": "dark_cinematic.mp4",
-        "default_url": "https://www.youtube.com/watch?v=n_Dv4JMiwK8"
+        "default_url": ""
+    },
+    "neon_motion": {
+        "name": "Neon Cyber Grid Motion (AI Procedural)",
+        "category": "AI Procedural",
+        "query": "",
+        "filename": "neon_motion_loop.mp4",
+        "default_url": ""
+    },
+    "aurora_galaxy": {
+        "name": "Deep Space Galaxy & Aurora (AI Procedural)",
+        "category": "AI Procedural",
+        "query": "",
+        "filename": "aurora_galaxy.mp4",
+        "default_url": ""
     }
 }
 
@@ -68,52 +136,65 @@ class BackgroundManager:
         if default_file.exists() and default_file.stat().st_size > 50000:
             return default_file
 
-        print("[BackgroundManager] Generating procedural neon motion background...")
-        cmd = [
-            "ffmpeg", "-y",
-            "-f", "lavfi",
-            "-i", f"gradients=s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:d=30:c0=0x150050:c1=0x000000:speed=0.015",
-            "-vf", "noise=alls=10:allf=t+u,drawgrid=w=140:h=140:t=2:c=cyan@0.12",
-            "-c:v", "libx264",
-            "-preset", "veryfast",
-            "-pix_fmt", "yuv420p",
-            "-t", "30",
-            str(default_file)
-        ]
-        try:
-            subprocess.run(cmd, check=True, capture_output=True)
-        except Exception as e:
-            print(f"[BackgroundManager] Warning creating synthetic bg: {e}")
+        return self.generate_ai_procedural_background("neon_motion")
 
-        return default_file
-
-    def generate_ai_cinematic_background(self, theme: str = "dark_cinematic") -> Path:
+    def generate_ai_procedural_background(self, theme: str = "dark_cinematic") -> Path:
         """
         Procedurally generates an AI cinematic motion atmosphere background
-        without external downloads.
+        using rapid bilinear low-res synthesis without external downloads.
         """
-        out_file = BACKGROUNDS_DIR / f"{theme}.mp4"
+        out_file = BACKGROUNDS_DIR / (THEMATIC_QUERIES.get(theme, {}).get("filename", f"{theme}.mp4"))
         if out_file.exists() and out_file.stat().st_size > 50000:
             return out_file
 
-        vf = "drawbox=x=0:y=0:w=1080:h=1920:color=black@0.4:t=fill,vignette=PI/3"
-        cmd = [
-            "ffmpeg", "-y",
-            "-f", "lavfi",
-            "-i", f"gradients=s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:d=45:c0=0x0a0f1d:c1=0x020408:speed=0.008",
-            "-vf", vf,
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-pix_fmt", "yuv420p",
-            "-t", "45",
-            str(out_file)
-        ]
+        print(f"[BackgroundManager] Generating procedural AI background: {theme}...")
+
+        if theme == "dark_cinematic":
+            vf = "scale=1080:1920:flags=bilinear,vignette=PI/3.2"
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "gradients=s=270x480:d=45:c0=0x0a0f1d:c1=0x020408:speed=0.008",
+                "-vf", vf,
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-t", "45",
+                str(out_file)
+            ]
+        elif theme == "aurora_galaxy":
+            vf = "scale=1080:1920:flags=bilinear,vignette=PI/3.5"
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "gradients=s=270x480:d=45:c0=0x05192d:c1=0x003f5c:c2=0x2f4b7c:c3=0x665191:speed=0.01",
+                "-vf", vf,
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-t", "45",
+                str(out_file)
+            ]
+        else: # neon_motion
+            vf = "scale=1080:1920:flags=bilinear,drawgrid=w=120:h=120:t=2:c=cyan@0.12"
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "gradients=s=270x480:d=45:c0=0x150050:c1=0x000000:speed=0.015",
+                "-vf", vf,
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-pix_fmt", "yuv420p",
+                "-t", "45",
+                str(out_file)
+            ]
 
         try:
             subprocess.run(cmd, check=True, capture_output=True)
             return out_file
-        except Exception:
-            return self.ensure_default_background()
+        except Exception as e:
+            print(f"[BackgroundManager] Procedural generation warning: {e}")
+            return out_file
 
     def scrub_thematic_background(self, theme_key: str = "minecraft_parkour") -> Path:
         """
@@ -129,8 +210,9 @@ class BackgroundManager:
         if target_file.exists() and target_file.stat().st_size > 500000:
             return target_file
 
-        if theme_key == "dark_cinematic":
-            return self.generate_ai_cinematic_background("dark_cinematic")
+        # Check if procedural theme
+        if theme_data.get("category") == "AI Procedural":
+            return self.generate_ai_procedural_background(theme_key)
 
         print(f"[BackgroundManager] Scrubbing YouTube for vertical b-roll: {theme_data['name']}...")
         search_query = theme_data["query"]
@@ -154,10 +236,11 @@ class BackgroundManager:
         except Exception as e:
             print(f"[BackgroundManager] Scrub search failed: {e}. Trying direct fallback URL...")
             try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([theme_data["default_url"]])
-                if target_file.exists() and target_file.stat().st_size > 500000:
-                    return target_file
+                if theme_data.get("default_url"):
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([theme_data["default_url"]])
+                    if target_file.exists() and target_file.stat().st_size > 500000:
+                        return target_file
             except Exception as e2:
                 print(f"[BackgroundManager] Fallback URL failed: {e2}")
 

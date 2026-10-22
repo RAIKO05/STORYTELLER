@@ -22,7 +22,7 @@ from app.video.tts import TTSEngine
 from app.video.background import BackgroundManager, THEMATIC_QUERIES
 from app.video.generator import VideoGenerator
 
-app = FastAPI(title="Viral TikTok Story Generator", version="2.1.0")
+app = FastAPI(title="Viral TikTok Story Generator", version="2.2.0")
 
 # Services
 reddit_scraper = RedditScraper()
@@ -45,19 +45,27 @@ def read_root():
 
 @app.get("/api/presets")
 def get_presets():
-    # Build background options with auto-scrub options first
     bg_options = [
-        {"id": "auto", "name": "✨ AI Auto-Scrub (Auto-matches story mood)", "size_mb": "Dynamic"},
-        {"id": "minecraft_parkour", "name": "Minecraft Parkour (Vertical 9:16)", "size_mb": "Scrubbed"},
-        {"id": "subway_surfers", "name": "Subway Surfers Gameplay", "size_mb": "Scrubbed"},
-        {"id": "gta_stunts", "name": "GTA V Mega Ramp Stunts", "size_mb": "Scrubbed"},
-        {"id": "satisfying_asmr", "name": "Satisfying ASMR Kinetic Sand", "size_mb": "Scrubbed"},
-        {"id": "dark_cinematic", "name": "Dark Atmospheric Mystery", "size_mb": "AI Gen"},
+        {"id": "auto", "name": "✨ AI Auto-Scrub (Matches story mood & intensity)", "category": "AI Smart", "size_mb": "Dynamic"}
     ]
-    # Append any manually downloaded or uploaded files
+
+    for key, data in THEMATIC_QUERIES.items():
+        bg_options.append({
+            "id": key,
+            "name": data["name"],
+            "category": data.get("category", "B-Roll"),
+            "size_mb": "Auto-Scrub" if data.get("category") != "AI Procedural" else "Instant"
+        })
+
+    # Append any custom local files
     for local_bg in bg_manager.list_available_backgrounds():
         if local_bg["id"] not in [b["id"] for b in bg_options]:
-            bg_options.append(local_bg)
+            bg_options.append({
+                "id": local_bg["id"],
+                "name": local_bg["name"],
+                "category": "Custom Local",
+                "size_mb": f"{local_bg['size_mb']} MB"
+            })
 
     voices = [
         {"id": "auto", "name": "✨ AI Auto-Select (Matches Story & Persona)", "gender": "AI", "lang": "en"}

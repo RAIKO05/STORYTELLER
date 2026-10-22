@@ -437,11 +437,25 @@ public struct CreatorView: View {
                 Spacer()
                 Picker("Background", selection: $selectedBackground) {
                     Text("✨ AI Auto-Scrub").tag("auto")
-                    Text("Minecraft Parkour (9:16)").tag("minecraft_parkour")
-                    Text("Subway Surfers").tag("subway_surfers")
-                    Text("GTA V Mega Ramps").tag("gta_stunts")
-                    Text("Satisfying ASMR Sand").tag("satisfying_asmr")
-                    Text("Dark Mystery Loop").tag("dark_cinematic")
+                    Section("🎮 Gaming Viral") {
+                        Text("Minecraft Parkour (9:16)").tag("minecraft_parkour")
+                        Text("Subway Surfers Fast Run").tag("subway_surfers")
+                        Text("GTA V Mega Ramp Stunts").tag("gta_stunts")
+                        Text("BeamNG Car Crashes").tag("beamng_crashes")
+                        Text("Roblox Tower Obby").tag("roblox_obby")
+                        Text("Temple Run 2 Classic").tag("temple_run")
+                    }
+                    Section("🧼 Satisfying ASMR") {
+                        Text("Kinetic Sand & Soap Cutting").tag("satisfying_asmr")
+                        Text("Hydraulic Press Crushing").tag("hydraulic_press")
+                        Text("Power Washing Deep Clean").tag("power_washing")
+                    }
+                    Section("🌌 Aesthetic & Procedural") {
+                        Text("Cyberpunk Synthwave Drive").tag("synthwave_drive")
+                        Text("Dark Atmospheric Mystery (AI)").tag("dark_cinematic")
+                        Text("Space Galaxy & Aurora (AI)").tag("aurora_galaxy")
+                        Text("Neon Cyber Grid (AI)").tag("neon_motion")
+                    }
                 }
                 .pickerStyle(.menu)
                 .tint(.cyan)
