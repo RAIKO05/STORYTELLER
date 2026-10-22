@@ -2,6 +2,22 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 
+// Transferable helper for PhotosPicker video selection
+public struct MovieFile: Transferable {
+    public let url: URL
+
+    public static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { movie in
+            SentTransferredFile(movie.url)
+        } importing: { received in
+            let copy = FileManager.default.temporaryDirectory.appendingPathComponent("custom_bg_\(UUID().uuidString).mp4")
+            try? FileManager.default.removeItem(at: copy)
+            try FileManager.default.copyItem(at: received.file, to: copy)
+            return Self(url: copy)
+        }
+    }
+}
+
 public struct CreatorView: View {
     @ObservedObject var api = StoryTellerAPIService.shared
 
