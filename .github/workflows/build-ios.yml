@@ -1,0 +1,89 @@
+name: Build iOS IPA (StoryTeller)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS IPA on Cloud Mac
+    runs-on: macos-15
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Select Xcode Version
+        run: |
+          echo "Available Xcode installations:"
+          ls -d /Applications/Xcode*
+          XCODE_LATEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)
+          echo "Selecting newest Xcode: $XCODE_LATEST"
+          sudo xcode-select -s "$XCODE_LATEST"
+          xcodebuild -version
+
+      - name: 🛠 Install XcodeGen
+        run: brew install xcodegen
+
+      - name: 📱 Generate Xcode Project
+        run: |
+          cd ios
+          xcodegen generate
+          sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' StoryTeller.xcodeproj/project.pbxproj || true
+          sed -i '' 's/compatibilityVersion = "Xcode 16.0";/compatibilityVersion = "Xcode 15.0";/g' StoryTeller.xcodeproj/project.pbxproj || true
+
+      - name: 🏗 Build iOS App
+        run: |
+          cd ios
+          if ! xcodebuild -project StoryTeller.xcodeproj \
+            -scheme StoryTeller \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" > xcodebuild.log 2>&1; then
+              echo "=== BUILD FAILED: PRINTING ERRORS ==="
+              grep -E "(error:|fatal error:)" xcodebuild.log | head -n 30 | while IFS= read -r line; do
+                echo "::error::$line"
+              done
+              exit 1
+          fi
+
+      - name: 📦 Package into IPA
+        run: |
+          cd ios
+          mkdir -p build/Payload
+          cp -R build/DerivedData/Build/Products/Release-iphoneos/StoryTeller.app build/Payload/
+          cd build
+          zip -qr StoryTeller.ipa Payload
+          echo "✅ StoryTeller.ipa successfully packaged!"
+
+      - name: 🚀 Upload StoryTeller.ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StoryTeller-iOS-App
+          path: ios/build/StoryTeller.ipa
+          retention-days: 14
+
+      - name: 🏷️ Publish Direct IPA to GitHub Releases
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "StoryTeller iOS v1.0.${{ github.run_number }}"
+          body: |
+            ### 🎬 StoryTeller iOS Universal Release
+            - **Universal Mobile & PC Synergy**: Connect your iPhone to your PC running StoryTeller over local Wi-Fi.
+            - **Multi-Source Story Ingestion**: Scrape Reddit viral stories (AITA, TIFU, Confessions), Quora, YouTube transcripts, or generate with AI.
+            - **AI Voice & B-Roll Matcher**: Automatic tone detection, voice actor selection, pacing, and dynamic b-roll scrubbing.
+            - **One-Tap Save to Camera Roll**: Directly save 1080x1920 MP4 viral videos into your iPhone Photos app ready to post to TikTok, YouTube Shorts, and Instagram Reels!
+            - **Native Karaoke Subtitles & 9:16 Video Player**: Full-screen vertical playback with video controls.
+          files: |
+            ios/build/StoryTeller.ipa
