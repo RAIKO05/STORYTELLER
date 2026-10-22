@@ -29,11 +29,34 @@ public class NativeVideoCompositor {
         let targetSize = CGSize(width: 1080, height: 1920)
         let totalDuration = CMTime(seconds: options.audioDuration, preferredTimescale: 600)
 
+        // 0. Safety Checks on Input Files
+        guard FileManager.default.fileExists(atPath: options.backgroundVideoURL.path) else {
+            throw NSError(domain: "NativeVideoCompositor", code: 404, userInfo: [
+                NSLocalizedDescriptionKey: "Background video file not found on disk (\(options.backgroundVideoURL.lastPathComponent))"
+            ])
+        }
+        let bgFileSize = (try? FileManager.default.attributesOfItem(atPath: options.backgroundVideoURL.path)[.size] as? Int64) ?? 0
+        guard bgFileSize > 10_000 else {
+            throw NSError(domain: "NativeVideoCompositor", code: 400, userInfo: [
+                NSLocalizedDescriptionKey: "Background video file is corrupt or empty (\(bgFileSize) bytes)"
+            ])
+        }
+
         let bgAsset = AVURLAsset(url: options.backgroundVideoURL)
         let audioAsset = AVURLAsset(url: options.narrationAudioURL)
 
-        guard let bgVideoTrack = try await bgAsset.loadTracks(withMediaType: .video).first else {
-            throw NSError(domain: "NativeVideoCompositor", code: 404, userInfo: [NSLocalizedDescriptionKey: "Background video track not found"])
+        let bgVideoTrack: AVAssetTrack
+        do {
+            guard let track = try await bgAsset.loadTracks(withMediaType: .video).first else {
+                throw NSError(domain: "NativeVideoCompositor", code: 404, userInfo: [
+                    NSLocalizedDescriptionKey: "Background video has no video track (\(options.backgroundVideoURL.lastPathComponent))"
+                ])
+            }
+            bgVideoTrack = track
+        } catch {
+            throw NSError(domain: "NativeVideoCompositor", code: 500, userInfo: [
+                NSLocalizedDescriptionKey: "Cannot open background video track: \(error.localizedDescription)"
+            ])
         }
 
         // 1. Create Mutable Composition
@@ -55,10 +78,14 @@ public class NativeVideoCompositor {
         }
 
         // 3. Insert narration audio
-        if let narrationTrack = try await audioAsset.loadTracks(withMediaType: .audio).first {
-            let actualAudioDuration = audioAsset.duration
-            let audioInsertDuration = min(totalDuration, actualAudioDuration)
-            try compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioInsertDuration), of: narrationTrack, at: .zero)
+        do {
+            if let narrationTrack = try await audioAsset.loadTracks(withMediaType: .audio).first {
+                let actualAudioDuration = audioAsset.duration
+                let audioInsertDuration = min(totalDuration, actualAudioDuration)
+                try compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioInsertDuration), of: narrationTrack, at: .zero)
+            }
+        } catch {
+            print("[NativeVideoCompositor] Warning: Could not load narration audio track: \(error)")
         }
 
         options.progressCallback?(0.20, "Scaling B-roll to 9:16 vertical 1080p...")

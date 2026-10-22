@@ -21,6 +21,7 @@ targets:
       - path: Services
       - path: Views
       - path: Assets.xcassets
+      - path: Resources
     dependencies:
       - sdk: AVFoundation.framework
       - sdk: AVKit.framework

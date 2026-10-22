@@ -29,105 +29,119 @@ public class NativeBackgroundService {
 
         // 1. Gaming
         BackgroundPresetItem(
-            id: "minecraft_parkour",
-            name: "Minecraft Parkour (9:16)",
-            category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/minecraft_parkour.mp4",
-            icon: "gamecontroller.fill"
-        ),
-        BackgroundPresetItem(
             id: "subway_surfers",
             name: "Subway Surfers Fast Run",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/subway_surfers.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/subway_surfers.mp4",
             icon: "figure.run"
+        ),
+        BackgroundPresetItem(
+            id: "minecraft_parkour",
+            name: "Minecraft Parkour (9:16)",
+            category: "Gaming",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/minecraft_parkour.mp4",
+            icon: "gamecontroller.fill"
         ),
         BackgroundPresetItem(
             id: "gta_stunts",
             name: "GTA V Mega Ramp Stunts",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/gta_stunts.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/gta_stunts.mp4",
             icon: "car.fill"
         ),
         BackgroundPresetItem(
             id: "beamng_crashes",
             name: "BeamNG Car Crashes & Stunts",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/beamng_crashes.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/gta_stunts.mp4",
             icon: "flame.fill"
         ),
         BackgroundPresetItem(
             id: "roblox_obby",
             name: "Roblox Tower Obby Parkour",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/roblox_obby.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/minecraft_parkour.mp4",
             icon: "cube.fill"
         ),
         BackgroundPresetItem(
             id: "temple_run",
             name: "Temple Run 2 Classic Run",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/temple_run.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/subway_surfers.mp4",
             icon: "figure.walk.motion"
         ),
         BackgroundPresetItem(
             id: "csgo_surf",
             name: "CS:GO / CS2 Smooth Surf",
             category: "Gaming",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/csgo_surf.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/gta_stunts.mp4",
             icon: "water.waves"
         ),
 
         // 2. Satisfying / ASMR
         BackgroundPresetItem(
+            id: "aurora_galaxy",
+            name: "Aurora Galaxy & Cosmic ASMR",
+            category: "Satisfying ASMR",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/aurora_galaxy.mp4",
+            icon: "sparkles"
+        ),
+        BackgroundPresetItem(
             id: "satisfying_asmr",
             name: "Kinetic Sand & Soap ASMR",
             category: "Satisfying ASMR",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/satisfying_asmr.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/aurora_galaxy.mp4",
             icon: "sparkles"
         ),
         BackgroundPresetItem(
             id: "hydraulic_press",
             name: "Hydraulic Press Crushing",
             category: "Satisfying ASMR",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/hydraulic_press.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/aurora_galaxy.mp4",
             icon: "hammer.fill"
         ),
         BackgroundPresetItem(
             id: "slime_asmr",
             name: "Crunchy Slime & Bubble Pop",
             category: "Satisfying ASMR",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/slime_asmr.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/aurora_galaxy.mp4",
             icon: "bubbles.and.sparkles.fill"
         ),
         BackgroundPresetItem(
             id: "marble_run",
             name: "Gravity Marble Run Race",
             category: "Satisfying ASMR",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/marble_run.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/aurora_galaxy.mp4",
             icon: "circle.circle.fill"
         ),
 
         // 3. Aesthetic & Procedural Loops (100% Offline)
         BackgroundPresetItem(
+            id: "neon_motion_loop",
+            name: "Cyber Neon Motion Loop (Built-in)",
+            category: "Aesthetic",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/neon_motion_loop.mp4",
+            icon: "grid"
+        ),
+        BackgroundPresetItem(
             id: "synthwave_drive",
             name: "Cyberpunk Synthwave Sunset Drive",
             category: "Aesthetic",
-            remoteURL: "https://raw.githubusercontent.com/RAIKO05/BAYAN/main/assets/broll/synthwave_drive.mp4",
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/neon_motion_loop.mp4",
             icon: "sunset.fill"
         ),
         BackgroundPresetItem(
             id: "neon_motion",
             name: "Neon Cyber Grid (AI Procedural)",
             category: "AI Procedural",
-            remoteURL: nil,
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/neon_motion_loop.mp4",
             icon: "grid"
         ),
         BackgroundPresetItem(
             id: "dark_cinematic",
-            name: "Dark Atmospheric Smoke (AI Procedural)",
+            name: "Dark Atmospheric Smoke (Built-in)",
             category: "AI Procedural",
-            remoteURL: nil,
+            remoteURL: "https://raw.githubusercontent.com/RAIKO05/STORYTELLER/main/ios/Resources/Backgrounds/dark_cinematic.mp4",
             icon: "moon.fill"
         ),
         BackgroundPresetItem(
@@ -146,7 +160,7 @@ public class NativeBackgroundService {
         )
     ]
 
-    /// Resolves background footage: downloads remote clip if needed, or generates procedural loop, or copies from camera roll.
+    /// Resolves background footage: checks custom photo video, app bundle, local cache, validated remote download, or bundled/procedural fallback.
     public func resolveBackgroundVideo(
         id: String,
         customVideoURL: URL? = nil,
@@ -154,48 +168,105 @@ public class NativeBackgroundService {
     ) async throws -> URL {
         // 1. If user picked a custom video from Photos Camera Roll
         if let customURL = customVideoURL, FileManager.default.fileExists(atPath: customURL.path) {
-            return customURL
+            let attrs = try? FileManager.default.attributesOfItem(atPath: customURL.path)
+            let size = attrs?[.size] as? Int64 ?? 0
+            if size > 100_000 {
+                print("[NativeBackgroundService] Using user custom Photos video (\(size) bytes)")
+                return customURL
+            }
         }
 
-        // 2. Auto match or specific ID
+        // 2. Resolve target ID (normalize)
         let targetId = (id == "auto" || id.isEmpty) ? "subway_surfers" : id
 
-        // Check if procedural requested
-        if targetId == "neon_motion" || targetId == "dark_cinematic" || targetId == "cosmic_warp" || targetId == "crimson_pulse" {
+        // Check if procedural explicitly requested
+        if targetId == "cosmic_warp" || targetId == "crimson_pulse" {
             progressHandler?("Generating AI procedural motion background...")
             return try await generateProceduralBackground(theme: targetId)
         }
 
-        // 3. Check local cache
+        // Map aliases to bundled assets if applicable
+        var bundleName = targetId
+        if targetId == "neon_motion" { bundleName = "neon_motion_loop" }
+
+        // 3. CHECK APP BUNDLE FIRST (100% Offline & Instant!)
+        if let bundleURL = Bundle.main.url(forResource: bundleName, withExtension: "mp4") ??
+                           Bundle.main.url(forResource: bundleName, withExtension: "mp4", subdirectory: "Backgrounds") ??
+                           Bundle.main.url(forResource: targetId, withExtension: "mp4") ??
+                           Bundle.main.url(forResource: targetId, withExtension: "mp4", subdirectory: "Backgrounds") {
+            let attrs = try? FileManager.default.attributesOfItem(atPath: bundleURL.path)
+            let size = attrs?[.size] as? Int64 ?? 0
+            if size > 100_000 {
+                print("[NativeBackgroundService] Using bundled background: \(bundleURL.lastPathComponent) (\(size) bytes)")
+                return bundleURL
+            }
+        }
+
+        // 4. CHECK LOCAL CACHE (Must be > 200KB to purge old 404 stubs from previous versions)
         let localFile = cacheDir.appendingPathComponent("\(targetId).mp4")
         if FileManager.default.fileExists(atPath: localFile.path) {
             let attrs = try? FileManager.default.attributesOfItem(atPath: localFile.path)
             let size = attrs?[.size] as? Int64 ?? 0
-            if size > 100_000 {
+            if size > 200_000 {
+                print("[NativeBackgroundService] Using cached background: \(localFile.lastPathComponent) (\(size) bytes)")
                 return localFile
+            } else {
+                // Delete corrupted or 404 text file
+                try? FileManager.default.removeItem(at: localFile)
             }
         }
 
-        // 4. Download from remote preset if available
-        guard let preset = availablePresets.first(where: { $0.id == targetId }),
-              let remoteURLString = preset.remoteURL,
-              let remoteURL = URL(string: remoteURLString) else {
-            // Procedural fallback
-            return try await generateProceduralBackground(theme: "neon_motion")
+        // 5. DOWNLOAD FROM REMOTE (With Strict HTTP Status & Size Validation)
+        if let preset = availablePresets.first(where: { $0.id == targetId }),
+           let remoteURLString = preset.remoteURL,
+           let remoteURL = URL(string: remoteURLString) {
+            progressHandler?("Downloading B-Roll (\(preset.name))...")
+            do {
+                var req = URLRequest(url: remoteURL)
+                req.timeoutInterval = 20
+                let (tempURL, response) = try await URLSession.shared.download(for: req)
+
+                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    throw NSError(domain: "NativeBackgroundService", code: code, userInfo: [
+                        NSLocalizedDescriptionKey: "Remote download returned HTTP \(code)"
+                    ])
+                }
+
+                let attrs = try? FileManager.default.attributesOfItem(atPath: tempURL.path)
+                let size = attrs?[.size] as? Int64 ?? 0
+                guard size > 200_000 else {
+                    throw NSError(domain: "NativeBackgroundService", code: 400, userInfo: [
+                        NSLocalizedDescriptionKey: "Downloaded file is corrupted or too small (\(size) bytes)"
+                    ])
+                }
+
+                try? FileManager.default.removeItem(at: localFile)
+                try FileManager.default.copyItem(at: tempURL, to: localFile)
+                print("[NativeBackgroundService] Successfully downloaded and cached: \(localFile.lastPathComponent) (\(size) bytes)")
+                return localFile
+            } catch {
+                print("[NativeBackgroundService] Remote download failed: \(error). Falling back to bundled/procedural asset.")
+            }
         }
 
-        progressHandler?("Downloading B-Roll (\(preset.name))...")
-        do {
-            var req = URLRequest(url: remoteURL)
-            req.timeoutInterval = 15
-            let (tempURL, _) = try await URLSession.shared.download(for: req)
-            try? FileManager.default.removeItem(at: localFile)
-            try FileManager.default.copyItem(at: tempURL, to: localFile)
-            return localFile
-        } catch {
-            print("[NativeBackgroundService] Remote download failed, generating procedural fallback: \(error)")
-            return try await generateProceduralBackground(theme: "neon_motion")
+        // 6. FALLBACK TO ANY AVAILABLE BUNDLED BACKGROUND
+        let fallbackCandidates = ["subway_surfers", "minecraft_parkour", "gta_stunts", "neon_motion_loop", "dark_cinematic", "aurora_galaxy"]
+        for candidate in fallbackCandidates {
+            if let bundleURL = Bundle.main.url(forResource: candidate, withExtension: "mp4") ??
+                               Bundle.main.url(forResource: candidate, withExtension: "mp4", subdirectory: "Backgrounds") {
+                let attrs = try? FileManager.default.attributesOfItem(atPath: bundleURL.path)
+                let size = attrs?[.size] as? Int64 ?? 0
+                if size > 100_000 {
+                    print("[NativeBackgroundService] Falling back to bundled candidate: \(candidate)")
+                    return bundleURL
+                }
+            }
         }
+
+        // 7. FINAL SAFETY NET: PROCEDURAL BACKGROUND GENERATOR (100% On-Device AVAssetWriter)
+        progressHandler?("Generating AI procedural motion background...")
+        return try await generateProceduralBackground(theme: targetId)
     }
 
     /// Generates high resolution 1080x1920 9:16 procedural video directly on-device using AVAssetWriter and CoreGraphics
