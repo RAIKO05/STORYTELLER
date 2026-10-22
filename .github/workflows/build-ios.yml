@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build iOS IPA on Cloud Mac
-    runs-on: macos-15
+    runs-on: macos-14
     permissions:
       contents: write
 
