@@ -67,12 +67,17 @@ class VideoGenerator:
                 10
             )
 
-        # Step 1: TTS Generation
+        # Step 1: TTS Generation (include title hook if not already in story)
         if status_callback:
             status_callback(f"Synthesizing voiceover with {final_voice} ({final_rate})...", 25)
         
+        speakable_text = story_text.strip()
+        clean_title = (title or "").strip()
+        if clean_title and clean_title.lower() != "viral tiktok story" and not speakable_text.lower().startswith(clean_title.lower()):
+            speakable_text = f"{clean_title}. {speakable_text}"
+
         tts_result = await self.tts_engine.generate_speech(
-            text=story_text,
+            text=speakable_text,
             voice=final_voice,
             rate=final_rate,
             pitch=pitch,
@@ -117,13 +122,9 @@ class VideoGenerator:
             f"ass='{escaped_ass}'"
         )
 
-        loop_flag = []
-        if duration > source_dur:
-            loop_flag = ["-stream_loop", "-1"]
-
         cmd = [
             "ffmpeg", "-y",
-            *loop_flag,
+            "-stream_loop", "-1",
             "-ss", str(start_offset),
             "-i", str(bg_path),
             "-i", str(audio_path),
@@ -134,7 +135,6 @@ class VideoGenerator:
             "-c:a", "aac",
             "-b:a", "192k",
             "-pix_fmt", "yuv420p",
-            "-shortest",
             str(final_video_path)
         ]
 

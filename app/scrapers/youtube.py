@@ -84,11 +84,6 @@ class YouTubeScraper:
                     transcript_text = " ".join(lines[:6])
 
                 cleaned_story = clean_text_for_tts(transcript_text)
-                # Ensure it has good flow
-                if len(cleaned_story) > 2000:
-                    # Clip to first ~300 words for a punchy 60-90s TikTok clip
-                    words = cleaned_story.split()[:280]
-                    cleaned_story = " ".join(words) + "..."
 
                 return {
                     "id": info.get("id", "yt_video"),

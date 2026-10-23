@@ -286,9 +286,20 @@ public class StoryTellerAPIService: ObservableObject {
             if rate == "+12%" || analysis.recommended_rate == "+12%" { rateMultiplier = 1.12 }
             if rate == "+18%" || analysis.recommended_rate == "+18%" { rateMultiplier = 1.18 }
 
-            // Step A: Native Speech
+            // Step A: Native Speech without truncation
+            let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanStory = story.trimmingCharacters(in: .whitespacesAndNewlines)
+            let speakableText: String
+            if cleanTitle.isEmpty || cleanTitle == "Viral TikTok Story" {
+                speakableText = cleanStory
+            } else if cleanStory.lowercased().starts(with: cleanTitle.lowercased()) {
+                speakableText = cleanStory
+            } else {
+                speakableText = "\(cleanTitle). \(cleanStory)"
+            }
+
             let speech = try await NativeSpeechService.shared.synthesizeStory(
-                text: "\(title). \(story)",
+                text: speakableText,
                 voiceId: resolvedVoice,
                 rateMultiplier: rateMultiplier
             )
@@ -349,7 +360,7 @@ public class StoryTellerAPIService: ObservableObject {
             var req = URLRequest(url: endpoint)
             req.httpMethod = "POST"
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            req.timeoutInterval = 120
+            req.timeoutInterval = 300
 
             let body: [String: String] = [
                 "title": title,

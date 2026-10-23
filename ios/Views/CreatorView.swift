@@ -571,7 +571,7 @@ public struct CreatorView: View {
 
             TextEditor(text: $storyText)
                 .font(.system(size: 13))
-                .frame(minHeight: 110, maxHeight: 150)
+                .frame(minHeight: 120, maxHeight: 220)
                 .padding(8)
                 .scrollContentBackground(.hidden)
                 .background(Color.black.opacity(0.30))

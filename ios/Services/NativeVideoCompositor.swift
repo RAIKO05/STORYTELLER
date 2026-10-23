@@ -66,33 +66,33 @@ public class NativeVideoCompositor {
             throw NSError(domain: "NativeVideoCompositor", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to create video composition track"])
         }
 
-        // 2. Insert and loop background video (asynchronously loaded duration)
+        // 2. Insert narration audio first to obtain exact uncompressed timeline duration
+        var effectiveDuration = totalDuration
+        if let narrationTrack = try? await audioAsset.loadTracks(withMediaType: .audio).first {
+            let rawAudioDuration = (try? await audioAsset.load(.duration)) ?? CMTime.zero
+            if rawAudioDuration.isNumeric && rawAudioDuration.seconds > 0.1 {
+                if let compAudioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                    try? compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: rawAudioDuration), of: narrationTrack, at: .zero)
+                    effectiveDuration = max(totalDuration, rawAudioDuration)
+                }
+            }
+        }
+
+        // 3. Insert and loop background video across the full effective audio duration
         let rawBgDuration = (try? await bgAsset.load(.duration)) ?? CMTime(seconds: 10, preferredTimescale: 600)
         let bgDuration = (rawBgDuration.isNumeric && rawBgDuration.seconds > 0.5) ? rawBgDuration : CMTime(seconds: 10, preferredTimescale: 600)
 
         var currentTime = CMTime.zero
-        while currentTime < totalDuration {
-            let remaining = totalDuration - currentTime
+        while currentTime < effectiveDuration {
+            let remaining = effectiveDuration - currentTime
             let slice = (remaining < bgDuration) ? remaining : bgDuration
             if slice.seconds <= 0.01 { break }
             try compVideoTrack.insertTimeRange(CMTimeRange(start: .zero, duration: slice), of: bgVideoTrack, at: currentTime)
             currentTime = currentTime + slice
         }
 
-        // 3. Insert narration audio (only create track if valid non-empty audio exists)
-        if let narrationTrack = try? await audioAsset.loadTracks(withMediaType: .audio).first {
-            let rawAudioDuration = (try? await audioAsset.load(.duration)) ?? CMTime.zero
-            if rawAudioDuration.isNumeric && rawAudioDuration.seconds > 0.1 {
-                if let compAudioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
-                    let audioInsertDuration = min(totalDuration, rawAudioDuration)
-                    try? compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioInsertDuration), of: narrationTrack, at: .zero)
-                }
-            }
-        }
-
         options.progressCallback?(0.20, "Scaling B-roll to 9:16 vertical 1080p...")
 
-        let effectiveDuration = composition.duration
         guard effectiveDuration.isNumeric && effectiveDuration.seconds > 0.5 else {
             throw NSError(domain: "NativeVideoCompositor", code: 400, userInfo: [NSLocalizedDescriptionKey: "Composition timeline is empty or duration is invalid"])
         }
@@ -172,6 +172,7 @@ public class NativeVideoCompositor {
         exportSession.outputURL = outputURL
         exportSession.outputFileType = .mp4
         exportSession.videoComposition = videoComposition
+        exportSession.timeRange = CMTimeRange(start: .zero, duration: effectiveDuration)
         exportSession.shouldOptimizeForNetworkUse = true
 
         // Progress polling task
@@ -202,6 +203,7 @@ public class NativeVideoCompositor {
                 fallbackSession.outputURL = outputURL
                 fallbackSession.outputFileType = .mp4
                 fallbackSession.videoComposition = cleanVideoComp
+                fallbackSession.timeRange = CMTimeRange(start: .zero, duration: effectiveDuration)
                 fallbackSession.shouldOptimizeForNetworkUse = true
                 await fallbackSession.export()
 
@@ -280,11 +282,12 @@ public class NativeVideoCompositor {
                 chunks.append(currentChunk)
             }
 
-            for chunk in chunks {
+            for (idx, chunk) in chunks.enumerated() {
                 guard let first = chunk.first, let last = chunk.last else { continue }
                 let phrase = chunk.map { $0.word }.joined(separator: " ")
                 let chunkStart = first.start
-                let chunkEnd = max(last.end, chunkStart + 0.6)
+                let nextStart = (idx + 1 < chunks.count) ? (chunks[idx + 1].first?.start ?? last.end) : last.end
+                let chunkEnd = min(max(last.end, chunkStart + 0.3), nextStart)
 
                 let textLayer = createChunkCaptionLayer(
                     text: phrase.uppercased(),

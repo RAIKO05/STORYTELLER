@@ -5,11 +5,11 @@ import AudioToolbox
 public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
     public static let shared = NativeSpeechService()
 
-    private var synthesizer = AVSpeechSynthesizer()
+    private var sharedSynthesizer = AVSpeechSynthesizer()
 
     public override init() {
         super.init()
-        synthesizer.delegate = self
+        sharedSynthesizer.delegate = self
     }
 
     public struct SpeechResult {
@@ -18,7 +18,9 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         public let words: [WordTiming]
     }
 
-    /// Synthesizes story text to an on-device audio file and generates word timings.
+    /// Synthesizes the full story text to an on-device audio file without any truncation.
+    /// Splits long text and multi-paragraph stories into sequential sentence chunks
+    /// and streams them consecutively into a single audio file (.caf container).
     public func synthesizeStory(
         text: String,
         voiceId: String = "auto",
@@ -38,88 +40,109 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         // 2. Select iOS voice
         let voice = selectVoice(voiceId: voiceId)
 
-        // 3. Configure utterance
-        let utterance = AVSpeechUtterance(string: cleanText)
-        utterance.voice = voice
+        // 3. Segment story into natural speech chunks (sentences/paragraphs)
+        // This ensures multi-paragraph stories and long texts are NEVER truncated or cut off early.
+        let chunks = splitIntoSpeechChunks(text: cleanText)
+        guard !chunks.isEmpty else {
+            throw NSError(domain: "NativeSpeechService", code: 400, userInfo: [NSLocalizedDescriptionKey: "No speakable sentences found in story"])
+        }
 
         let baseRate: Float = AVSpeechUtteranceDefaultSpeechRate
-        utterance.rate = min(0.62, max(0.40, baseRate * rateMultiplier))
-        utterance.pitchMultiplier = 1.0
-        utterance.preUtteranceDelay = 0.05
-        utterance.postUtteranceDelay = 0.1
+        let targetRate = min(0.62, max(0.40, baseRate * rateMultiplier))
 
-        // 4. Synthesize to audio buffer & write to file with fallback
-        do {
-            let audioFileDuration = try await renderUtteranceToFile(utterance: utterance, outputURL: outputURL)
-            let words = buildWordTimestamps(for: cleanText, totalDuration: audioFileDuration)
-            return SpeechResult(audioURL: outputURL, duration: audioFileDuration, words: words)
-        } catch {
-            print("[NativeSpeechService] Synthesis error: \(error). Using robust fallback audio generator.")
-            let fallbackDuration = max(5.0, Double(cleanText.split(whereSeparator: \.isWhitespace).count) / 2.7)
+        // Create a dedicated synthesizer instance for this session to prevent state crosstalk
+        let sessionSynthesizer = AVSpeechSynthesizer()
+        var audioFile: AVAudioFile?
+        var wordTimings: [WordTiming] = []
+        var previousEndDuration: Double = 0.0
+
+        for chunk in chunks {
+            let utterance = AVSpeechUtterance(string: chunk)
+            utterance.voice = voice
+            utterance.rate = targetRate
+            utterance.pitchMultiplier = 1.0
+            utterance.preUtteranceDelay = 0.02
+            utterance.postUtteranceDelay = 0.12
+
+            let chunkStartDuration = previousEndDuration
+
+            do {
+                let currentTotalDuration = try await renderUtteranceToFile(
+                    synthesizer: sessionSynthesizer,
+                    utterance: utterance,
+                    audioFileRef: &audioFile,
+                    outputURL: outputURL
+                )
+                let chunkDuration = max(0.2, currentTotalDuration - chunkStartDuration)
+                let chunkWords = buildChunkWordTimestamps(
+                    for: chunk,
+                    startTime: chunkStartDuration,
+                    duration: chunkDuration
+                )
+                wordTimings.append(contentsOf: chunkWords)
+                previousEndDuration = currentTotalDuration
+            } catch {
+                print("[NativeSpeechService] Error synthesizing chunk '\(chunk.prefix(25))...': \(error)")
+                // Continue to subsequent chunks so one chunk never aborts the rest of the story!
+            }
+        }
+
+        // Finalize audio file handle to flush CAF headers to disk
+        let totalDuration = previousEndDuration
+        audioFile = nil
+
+        guard totalDuration > 0.5 && FileManager.default.fileExists(atPath: outputURL.path) else {
+            print("[NativeSpeechService] Synthesis produced insufficient audio. Using fallback generator.")
+            let fallbackDuration = max(5.0, Double(cleanText.split(whereSeparator: \.isWhitespace).count) / 2.5)
             try generateSilenceAudioFile(outputURL: outputURL, duration: fallbackDuration)
-            let words = buildWordTimestamps(for: cleanText, totalDuration: fallbackDuration)
-            return SpeechResult(audioURL: outputURL, duration: fallbackDuration, words: words)
+            let fallbackWords = buildChunkWordTimestamps(for: cleanText, startTime: 0.0, duration: fallbackDuration)
+            return SpeechResult(audioURL: outputURL, duration: fallbackDuration, words: fallbackWords)
         }
+
+        return SpeechResult(audioURL: outputURL, duration: totalDuration, words: wordTimings)
     }
 
-    private func selectVoice(voiceId: String) -> AVSpeechSynthesisVoice {
-        let availableVoices = AVSpeechSynthesisVoice.speechVoices()
+    /// Renders a single utterance's PCM buffers into the shared open AVAudioFile.
+    /// Resumes when this specific utterance emits pcmBuffer.frameLength == 0.
+    private func renderUtteranceToFile(
+        synthesizer: AVSpeechSynthesizer,
+        utterance: AVSpeechUtterance,
+        audioFileRef: inout AVAudioFile?,
+        outputURL: URL
+    ) async throws -> Double {
+        var localFile = audioFileRef
 
-        // If specific language/identifier requested
-        if voiceId != "auto" {
-            if let matched = availableVoices.first(where: { $0.identifier == voiceId || $0.name.lowercased().contains(voiceId.lowercased()) }) {
-                return matched
-            }
-        }
-
-        // Try to pick high quality English voice (Samantha, Daniel, Karen, Arthur)
-        let preferredNames = ["Samantha", "Daniel", "Karen", "Arthur", "Nicky", "Alex", "Fred"]
-        for pref in preferredNames {
-            if let v = availableVoices.first(where: { $0.name.localizedCaseInsensitiveContains(pref) && $0.language.starts(with: "en") }) {
-                return v
-            }
-        }
-
-        // Fallback to any en-US voice or system default
-        return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) ?? availableVoices.first ?? AVSpeechSynthesisVoice()
-    }
-
-    private func renderUtteranceToFile(utterance: AVSpeechUtterance, outputURL: URL) async throws -> Double {
-        return try await withCheckedThrowingContinuation { continuation in
-            var audioFile: AVAudioFile?
+        let finalDuration = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Double, Error>) in
             var hasFinished = false
 
-            // Timeout safety fallback after 30 seconds
+            // Per-chunk safety timeout (25 seconds for a single 15-25 word sentence is generous)
             let timeoutWork = DispatchWorkItem {
                 if !hasFinished {
                     hasFinished = true
-                    let duration = audioFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 10.0
-                    audioFile = nil
-                    continuation.resume(returning: max(duration, 3.0))
+                    let currentDur = localFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0.0
+                    continuation.resume(returning: currentDur)
                 }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 30.0, execute: timeoutWork)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 25.0, execute: timeoutWork)
 
-            // Use write callback of AVSpeechSynthesizer
-            self.synthesizer.write(utterance) { (buffer: AVAudioBuffer) in
+            synthesizer.write(utterance) { (buffer: AVAudioBuffer) in
                 guard let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
 
                 if pcmBuffer.frameLength == 0 {
-                    // Synthesis finished
+                    // Frame length 0 signals the end of *this specific* chunk utterance
                     timeoutWork.cancel()
                     if !hasFinished {
                         hasFinished = true
-                        let duration = audioFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 10.0
-                        audioFile = nil // Close file handle to flush CAF headers to disk!
-                        continuation.resume(returning: max(duration, 3.0))
+                        let currentDur = localFile.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0.0
+                        continuation.resume(returning: currentDur)
                     }
                     return
                 }
 
-                if audioFile == nil {
+                if localFile == nil {
                     do {
                         // Native CAF Linear PCM format matching pcmBuffer natively with ZERO conversion error
-                        audioFile = try AVAudioFile(
+                        localFile = try AVAudioFile(
                             forWriting: outputURL,
                             settings: pcmBuffer.format.settings,
                             commonFormat: pcmBuffer.format.commonFormat,
@@ -136,27 +159,91 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
                 }
 
                 do {
-                    try audioFile?.write(from: pcmBuffer)
+                    try localFile?.write(from: pcmBuffer)
                 } catch {
                     print("[NativeSpeechService] Buffer write error: \(error)")
                 }
             }
         }
+
+        audioFileRef = localFile
+        return finalDuration
     }
 
-    private func generateSilenceAudioFile(outputURL: URL, duration: Double) throws {
-        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) else { return }
-        let audioFile = try AVAudioFile(forWriting: outputURL, settings: format.settings)
-        let frameCount = AVAudioFrameCount(duration * 44100)
-        if let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) {
-            buffer.frameLength = frameCount
-            try audioFile.write(from: buffer)
+    /// Breaks a long story and multi-paragraph text into clean, natural sentence chunks.
+    /// Eliminates early termination caused by newlines or oversized utterance buffers.
+    private func splitIntoSpeechChunks(text: String) -> [String] {
+        let normalized = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        let lines = normalized.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        var chunks: [String] = []
+
+        for line in lines {
+            var currentSentence = ""
+            let words = line.split(whereSeparator: \.isWhitespace).map { String($0) }
+
+            for (idx, word) in words.enumerated() {
+                if currentSentence.isEmpty {
+                    currentSentence = word
+                } else {
+                    currentSentence += " " + word
+                }
+
+                let isLastWord = (idx == words.count - 1)
+                let endsWithTerminator = word.hasSuffix(".") || word.hasSuffix("!") || word.hasSuffix("?") || word.hasSuffix("…")
+                let isTooLong = currentSentence.count > 160
+
+                if isLastWord || endsWithTerminator || (isTooLong && word.hasSuffix(",")) {
+                    let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        chunks.append(trimmed)
+                    }
+                    currentSentence = ""
+                }
+            }
+
+            if !currentSentence.isEmpty {
+                let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    chunks.append(trimmed)
+                }
+            }
         }
+
+        return chunks
     }
 
-    /// Computes accurate word-by-word timestamps across the total narration duration,
-    /// weighting by syllables and punctuation pauses (commas, periods).
-    private func buildWordTimestamps(for text: String, totalDuration: Double) -> [WordTiming] {
+    /// Selects the best installed iOS voice
+    private func selectVoice(voiceId: String) -> AVSpeechSynthesisVoice {
+        let availableVoices = AVSpeechSynthesisVoice.speechVoices()
+
+        if voiceId != "auto" {
+            if let matched = availableVoices.first(where: { $0.identifier == voiceId || $0.name.lowercased().contains(voiceId.lowercased()) }) {
+                return matched
+            }
+        }
+
+        let preferredNames = ["Samantha", "Daniel", "Arthur", "Karen", "Nicky", "Alex", "Fred"]
+        for pref in preferredNames {
+            if let v = availableVoices.first(where: { $0.name.localizedCaseInsensitiveContains(pref) && $0.language.starts(with: "en") }) {
+                return v
+            }
+        }
+
+        return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) ?? availableVoices.first ?? AVSpeechSynthesisVoice()
+    }
+
+    /// Distributes word timings accurately within a chunk's actual audio timeframe.
+    private func buildChunkWordTimestamps(
+        for text: String,
+        startTime: Double,
+        duration: Double
+    ) -> [WordTiming] {
         let rawTokens = text.split(whereSeparator: \.isWhitespace).map { String($0) }
         guard !rawTokens.isEmpty else { return [] }
 
@@ -164,22 +251,22 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         for token in rawTokens {
             var w = Double(max(token.count, 2))
             if token.hasSuffix(",") || token.hasSuffix(";") || token.hasSuffix(":") {
-                w += 3.5
+                w += 2.0
             } else if token.hasSuffix(".") || token.hasSuffix("!") || token.hasSuffix("?") {
-                w += 5.5
+                w += 3.5
             }
             weights.append(w)
         }
 
-        let totalWeight = weights.reduce(0, +)
+        let totalWeight = max(weights.reduce(0, +), 1.0)
         var result: [WordTiming] = []
-        var currentTime: Double = 0.05
+        var currentTime: Double = startTime
 
         for i in 0..<rawTokens.count {
             let token = rawTokens[i]
-            let durationForWord = (weights[i] / totalWeight) * (totalDuration - 0.2)
+            let durationForWord = (weights[i] / totalWeight) * duration
             let wordStart = currentTime
-            let wordEnd = min(totalDuration, wordStart + durationForWord)
+            let wordEnd = min(startTime + duration, wordStart + durationForWord)
 
             let cleanWord = token.trimmingCharacters(in: CharacterSet.punctuationCharacters)
             let displayWord = cleanWord.isEmpty ? token : cleanWord
@@ -194,6 +281,16 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         }
 
         return result
+    }
+
+    private func generateSilenceAudioFile(outputURL: URL, duration: Double) throws {
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) else { return }
+        let audioFile = try AVAudioFile(forWriting: outputURL, settings: format.settings)
+        let frameCount = AVAudioFrameCount(duration * 44100)
+        if let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) {
+            buffer.frameLength = frameCount
+            try audioFile.write(from: buffer)
+        }
     }
 
     /// Lists all installed high-quality speech voices for the UI picker
