@@ -727,15 +727,17 @@ public struct CreatorView: View {
             controlRow(title: "Voice Actor", icon: "waveform") {
                 HStack(spacing: 8) {
                     Picker("Voice", selection: $selectedVoice) {
-                        Text("✨ AI Auto-Select").tag("auto")
-                        Text("Samantha (Natural US)").tag("en-US-Samantha")
-                        Text("Daniel (British Narrator)").tag("en-GB-Daniel")
-                        Text("Arthur (Deep & Clear)").tag("en-US-Arthur")
-                        Text("Karen (Australian)").tag("en-AU-Karen")
-                        Text("Fred (Punchy Retro)").tag("en-US-Fred")
-                        Text("Christopher (Deep Cloud)").tag("en-US-ChristopherNeural")
-                        Text("Guy (Energetic Cloud)").tag("en-US-GuyNeural")
-                        Text("Jenny (Female Cloud)").tag("en-US-JennyNeural")
+                        Text("✨ AI Auto-Select (Smart Human)").tag("auto")
+                        Text("Ava (Ultra-Human Studio Female)").tag("Ava")
+                        Text("Evan (Conversational Male)").tag("Evan")
+                        Text("Nathan (Warm Storyteller Male)").tag("Nathan")
+                        Text("Zoe (Authentic Expressive Female)").tag("Zoe")
+                        Text("Oliver (British Storyteller Male)").tag("Oliver")
+                        Text("Samantha (Natural US Female)").tag("Samantha")
+                        Text("Andrew (Cloud Neural HD - Male)").tag("en-US-AndrewMultilingualNeural")
+                        Text("Ava (Cloud Neural HD - Female)").tag("en-US-AvaMultilingualNeural")
+                        Text("Brian (Cloud Neural HD - True Crime)").tag("en-US-BrianMultilingualNeural")
+                        Text("Emma (Cloud Neural HD - Witty Female)").tag("en-US-EmmaMultilingualNeural")
                     }
                     .pickerStyle(.menu)
                     .tint(themeManager.currentTheme.accentColor)
@@ -751,13 +753,13 @@ public struct CreatorView: View {
             Divider().background(Color.white.opacity(0.08))
 
             // Speed Row
-            controlRow(title: "Pacing Speed", icon: "gauge.with.needle.fill") {
+            controlRow(title: "Speech Cadence", icon: "gauge.with.needle.fill") {
                 Picker("Speed", selection: $selectedRate) {
-                    Text("✨ AI Optimal").tag("auto")
-                    Text("Normal (1.0x)").tag("+0%")
-                    Text("Snappy (+8%)").tag("+8%")
-                    Text("Viral High (+12%)").tag("+12%")
-                    Text("Hyper (+18%)").tag("+18%")
+                    Text("✨ AI Natural Pacing").tag("auto")
+                    Text("Normal (Human 1.0x)").tag("+0%")
+                    Text("Conversational (+2%)").tag("+2%")
+                    Text("Engaged (+5%)").tag("+5%")
+                    Text("Dramatic Slow (-3%)").tag("-3%")
                 }
                 .pickerStyle(.menu)
                 .tint(themeManager.currentTheme.accentColor)

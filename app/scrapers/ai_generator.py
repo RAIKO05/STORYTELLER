@@ -135,15 +135,15 @@ class AIViralStoryGenerator:
             return {
                 "vibe": "Spooky / Mystery / Unsolved",
                 "vibe_key": "mystery",
-                "recommended_voice": "en-US-EricNeural",
-                "voice_name": "Eric (Serious / True Crime Mystery)",
-                "recommended_rate": "+5%",
+                "recommended_voice": "en-US-BrianMultilingualNeural",
+                "voice_name": "Brian (Deep Documentary & True Crime Male)",
+                "recommended_rate": "+0%",
                 "recommended_color": "&HFFFF00&", # Electric Cyan
                 "color_name": "Electric Cyan",
                 "recommended_bg": bg_choice,
                 "bg_name": bg_name,
                 "subtitle_style": "single",
-                "rationale": "High suspense and tension detected. Eric's deep, steady delivery paired with deliberate +5% pacing and Electric Cyan text maximizes dramatic retention."
+                "rationale": "High suspense and tension detected. Brian's deep, cinematic baritone at natural human pacing with Electric Cyan subtitles maximizes dramatic retention."
             }
         elif top_vibe == "revenge":
             # Check if car crash or hydraulic destruction
@@ -152,15 +152,15 @@ class AIViralStoryGenerator:
             return {
                 "vibe": "Epic Revenge / Workplace Drama",
                 "vibe_key": "revenge",
-                "recommended_voice": "en-US-GuyNeural",
-                "voice_name": "Guy (Energetic Viral Narrator)",
-                "recommended_rate": "+15%",
+                "recommended_voice": "en-US-EmmaMultilingualNeural",
+                "voice_name": "Emma (Expressive & Witty Female)",
+                "recommended_rate": "+2%",
                 "recommended_color": "&H00FF00&", # Neon Lime Green
                 "color_name": "Neon Lime Green",
                 "recommended_bg": bg_choice,
                 "bg_name": bg_name,
                 "subtitle_style": "karaoke",
-                "rationale": "High-energy revenge narrative detected. Guy's confident voice at +15% speed with high-contrast Neon Lime highlights keeps viewers hooked through the climax."
+                "rationale": "High-energy revenge narrative detected. Emma's expressive, conversational cadence at natural +2% pacing keeps viewers hooked through the climax."
             }
         elif top_vibe == "confession":
             # Synthwave drive for late night or ASMR for intimate secrets
@@ -169,15 +169,15 @@ class AIViralStoryGenerator:
             return {
                 "vibe": "Deep Secret / Personal Confession",
                 "vibe_key": "confession",
-                "recommended_voice": "en-US-ChristopherNeural",
-                "voice_name": "Christopher (Storyteller Male - Deep & Cinematic)",
-                "recommended_rate": "+10%",
+                "recommended_voice": "en-US-AvaMultilingualNeural",
+                "voice_name": "Ava (Ultra-Human Female - Confessions)",
+                "recommended_rate": "+0%",
                 "recommended_color": "&H00FFFF&", # TikTok Yellow
                 "color_name": "TikTok Neon Yellow",
                 "recommended_bg": bg_choice,
                 "bg_name": bg_name,
                 "subtitle_style": "karaoke",
-                "rationale": "Intimate storytelling tone detected. Christopher's rich voice creates strong emotional trust, paired with mesmerizing visuals for maximum watch-time."
+                "rationale": "Intimate storytelling tone detected. Ava's warm, realistic human tone creates deep viewer empathy, paired with mesmerizing visuals for maximum watch-time."
             }
         elif top_vibe == "humor":
             bg_choice = "temple_run" if "chase" in full_text else "subway_surfers"
@@ -185,21 +185,21 @@ class AIViralStoryGenerator:
             return {
                 "vibe": "Comedy / Chaos / TIFU",
                 "vibe_key": "humor",
-                "recommended_voice": "en-US-GuyNeural",
-                "voice_name": "Guy (Energetic Viral Narrator)",
-                "recommended_rate": "+18%",
+                "recommended_voice": "en-US-AndrewMultilingualNeural",
+                "voice_name": "Andrew (Ultra-Human Storyteller Male)",
+                "recommended_rate": "+3%",
                 "recommended_color": "&H00FFFF&",
                 "color_name": "TikTok Neon Yellow",
                 "recommended_bg": bg_choice,
                 "bg_name": bg_name,
                 "subtitle_style": "single",
-                "rationale": "Fast-paced comedic storytelling detected. Snappy +18% speed with high-velocity single word pops mirrors viral TikTok comedy formats."
+                "rationale": "Conversational comedic storytelling detected. Andrew's natural storytelling rhythm at +3% mirrors top viral TikTok creators."
             }
         else:
             female_words = ["my husband", "he wanted", "my boyfriend", "bride", "mother", "sister"]
             is_female = any(w in full_text for w in female_words)
-            chosen_voice = "en-US-JennyNeural" if is_female else "en-US-ChristopherNeural"
-            voice_name = "Jenny (Natural Conversational Female)" if is_female else "Christopher (Storyteller Male)"
+            chosen_voice = "en-US-AvaMultilingualNeural" if is_female else "en-US-AndrewMultilingualNeural"
+            voice_name = "Ava (Ultra-Human Female)" if is_female else "Andrew (Ultra-Human Male)"
 
             bg_choice = "roblox_obby" if "teen" in full_text else "minecraft_parkour"
             bg_name = "Roblox Tower Obby Parkour" if bg_choice == "roblox_obby" else "Minecraft Parkour (Vertical 9:16)"
@@ -209,13 +209,13 @@ class AIViralStoryGenerator:
                 "vibe_key": "drama",
                 "recommended_voice": chosen_voice,
                 "voice_name": voice_name,
-                "recommended_rate": "+12%",
+                "recommended_rate": "+0%",
                 "recommended_color": "&H00FFFF&",
                 "color_name": "TikTok Neon Yellow",
                 "recommended_bg": bg_choice,
                 "bg_name": bg_name,
                 "subtitle_style": "karaoke",
-                "rationale": f"Relatable interpersonal drama detected. Matched with {voice_name} at +12% pacing over {bg_name} to drive intense comment debates."
+                "rationale": f"Relatable interpersonal drama detected. Matched with {voice_name} at natural human cadence over {bg_name} to drive intense comment debates."
             }
 
     def generate_story(self, category: str = "aita", prompt_hint: str = "", target_duration: int = 60) -> Dict:

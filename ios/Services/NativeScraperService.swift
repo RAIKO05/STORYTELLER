@@ -331,58 +331,58 @@ public class NativeScraperService {
             return AIMatch(
                 vibe: "Dark Suspense & Creepypasta",
                 vibe_key: "horror",
-                recommended_voice: "en-US-EricNeural",
-                voice_name: "Eric (True Crime & Mystery)",
+                recommended_voice: "en-US-BrianMultilingualNeural",
+                voice_name: "Brian (Deep True Crime & Mystery)",
                 recommended_rate: "+0%",
                 recommended_color: "&H0000FF&",
                 color_name: "Hot Coral Red",
                 recommended_bg: "dark_cinematic",
                 bg_name: "Dark Atmospheric Mystery",
                 subtitle_style: "single",
-                rationale: "Detected high suspense and tension words. Recommending deep pacing, crimson highlight, and atmospheric b-roll."
+                rationale: "Detected high suspense and tension words. Recommending Brian's deep baritone at natural pacing and atmospheric b-roll."
             )
         } else if fScore >= max(dScore, sScore, 1) {
             return AIMatch(
                 vibe: "High-Octane Adrenaline",
                 vibe_key: "action",
-                recommended_voice: "en-US-GuyNeural",
-                voice_name: "Guy (Energetic Viral)",
-                recommended_rate: "+12%",
+                recommended_voice: "en-US-AndrewMultilingualNeural",
+                voice_name: "Andrew (Ultra-Human Storyteller)",
+                recommended_rate: "+2%",
                 recommended_color: "&H00FF00&",
                 color_name: "Neon Lime Green",
                 recommended_bg: "gta_stunts",
                 bg_name: "GTA V Mega Ramp Stunts",
                 subtitle_style: "single",
-                rationale: "Action-packed narrative requires snappy pacing and high-energy GTA V Mega Ramp b-roll to maximize retention."
+                rationale: "Action-packed narrative requires conversational human cadence and high-energy GTA V Mega Ramp b-roll to maximize retention."
             )
         } else if sScore >= max(dScore, 1) {
             return AIMatch(
                 vibe: "Satisfying & Mindbending",
                 vibe_key: "smart",
-                recommended_voice: "en-US-JennyNeural",
-                voice_name: "Jenny (Natural Voice)",
-                recommended_rate: "+8%",
+                recommended_voice: "en-US-AvaMultilingualNeural",
+                voice_name: "Ava (Ultra-Human Studio Female)",
+                recommended_rate: "+0%",
                 recommended_color: "&HFFFF00&",
                 color_name: "Electric Cyan",
                 recommended_bg: "satisfying_asmr",
                 bg_name: "Satisfying Kinetic Sand & Soap",
                 subtitle_style: "karaoke",
-                rationale: "Educational or thought-provoking story matches perfectly with oddly satisfying ASMR footage and modern cyan captions."
+                rationale: "Thought-provoking story matches perfectly with Ava's natural voiceover over satisfying ASMR footage and modern cyan captions."
             )
         } else {
             // Default Drama / AITA
             return AIMatch(
                 vibe: "Petty Drama & Gossip",
                 vibe_key: "drama",
-                recommended_voice: "en-US-ChristopherNeural",
-                voice_name: "Christopher (Deep Storyteller)",
-                recommended_rate: "+8%",
+                recommended_voice: "en-US-AvaMultilingualNeural",
+                voice_name: "Ava (Ultra-Human Confession Voice)",
+                recommended_rate: "+0%",
                 recommended_color: "&H00FFFF&",
                 color_name: "TikTok Yellow",
                 recommended_bg: "subway_surfers",
                 bg_name: "Subway Surfers Fast Run",
                 subtitle_style: "karaoke",
-                rationale: "Relatable drama pairs with TikTok iconic yellow karaoke text and fast-paced Subway Surfers gameplay."
+                rationale: "Relatable drama pairs with Ava's ultra-realistic human emotion, TikTok yellow karaoke text, and Subway Surfers gameplay."
             )
         }
     }

@@ -214,7 +214,11 @@ class TTSPreviewRequest(BaseModel):
 @app.post("/api/tts/preview")
 async def preview_tts(req: TTSPreviewRequest):
     preview_file = CACHE_DIR / "preview.mp3"
-    snippet = " ".join(req.text.split()[:35])
+    words = req.text.strip().split() if req.text else []
+    if len(words) < 5:
+        snippet = "I never thought three years of keeping my mouth shut would end like this, but when she called the coordinator a murderer in front of two hundred guests, I lost all patience."
+    else:
+        snippet = " ".join(words[:40])
 
     final_voice = req.voice
     final_rate = req.rate

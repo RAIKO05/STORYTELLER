@@ -15,15 +15,15 @@ CACHE_DIR = BASE_DIR / ".cache"
 for p in [BACKGROUNDS_DIR, AUDIO_DIR, FONTS_DIR, OUTPUTS_DIR, CACHE_DIR]:
     p.mkdir(parents=True, exist_ok=True)
 
-# TTS Voice Presets (Popular TikTok / Reels Narrators)
+# TTS Voice Presets (Ultra-Human, Conversational & Expressive Narrators)
 VOICE_PRESETS = [
-    {"id": "en-US-ChristopherNeural", "name": "Christopher (Storyteller Male - Deep & Cinematic)", "gender": "Male", "lang": "en-US"},
-    {"id": "en-US-GuyNeural", "name": "Guy (Energetic Viral Narrator)", "gender": "Male", "lang": "en-US"},
-    {"id": "en-US-JennyNeural", "name": "Jenny (Natural Conversational Female)", "gender": "Female", "lang": "en-US"},
-    {"id": "en-US-AriaNeural", "name": "Aria (Dramatic / Emotional Female)", "gender": "Female", "lang": "en-US"},
-    {"id": "en-GB-RyanNeural", "name": "Ryan (British Narration)", "gender": "Male", "lang": "en-GB"},
-    {"id": "en-US-EricNeural", "name": "Eric (Serious / True Crime Mystery)", "gender": "Male", "lang": "en-US"},
-    {"id": "en-US-AnaNeural", "name": "Ana (Youthful / Upbeat Female)", "gender": "Female", "lang": "en-US"},
+    {"id": "en-US-AndrewMultilingualNeural", "name": "Andrew (Ultra-Human Storyteller Male - Viral TikTok & YouTube)", "gender": "Male", "lang": "en-US"},
+    {"id": "en-US-AvaMultilingualNeural", "name": "Ava (Ultra-Human Female - Confessions & Emotional Drama)", "gender": "Female", "lang": "en-US"},
+    {"id": "en-US-BrianMultilingualNeural", "name": "Brian (Deep Documentary & True Crime Male - Cinematic)", "gender": "Male", "lang": "en-US"},
+    {"id": "en-US-EmmaMultilingualNeural", "name": "Emma (Expressive & Witty Female - Revenge & Drama)", "gender": "Female", "lang": "en-US"},
+    {"id": "en-US-AndrewNeural", "name": "Andrew (Natural Conversational Male)", "gender": "Male", "lang": "en-US"},
+    {"id": "en-US-AvaNeural", "name": "Ava (Natural Conversational Female)", "gender": "Female", "lang": "en-US"},
+    {"id": "en-GB-RyanNeural", "name": "Ryan (Sophisticated British Storyteller)", "gender": "Male", "lang": "en-GB"},
 ]
 
 # Popular Subreddits for viral stories

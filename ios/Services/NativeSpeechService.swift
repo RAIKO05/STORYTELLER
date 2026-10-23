@@ -241,24 +241,75 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         return chunks
     }
 
-    /// Selects the best installed iOS voice
+    /// Selects the highest quality, most natural-sounding voice available on the device.
+    /// Prioritizes Apple Neural/Premium and Enhanced studio voices, strictly banning legacy robotic voices.
     private func selectVoice(voiceId: String) -> AVSpeechSynthesisVoice {
-        let availableVoices = AVSpeechSynthesisVoice.speechVoices()
+        let allVoices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.starts(with: "en") }
+        let roboticNames = ["fred", "alex", "albert", "bad news", "bahh", "bells", "boing", "bubbles", "cellos", "deranged", "good news", "hysterical", "pipe organ", "trinoids", "whisper", "zarvox", "junior", "ralph", "kathy", "vicki", "bruce", "agnes", "princess"]
 
-        if voiceId != "auto" {
-            if let matched = availableVoices.first(where: { $0.identifier == voiceId || $0.name.lowercased().contains(voiceId.lowercased()) }) {
+        let humanVoices = allVoices.filter { voice in
+            let name = voice.name.lowercased()
+            return !roboticNames.contains(where: { name.contains($0) })
+        }
+
+        // 1. Direct identifier or name match
+        if voiceId != "auto" && !voiceId.isEmpty {
+            if let direct = humanVoices.first(where: { $0.identifier == voiceId }) {
+                return direct
+            }
+            if let matched = humanVoices.first(where: { $0.name.localizedCaseInsensitiveContains(voiceId) }) {
                 return matched
             }
         }
 
-        let preferredNames = ["Samantha", "Daniel", "Arthur", "Karen", "Nicky", "Alex", "Fred"]
-        for pref in preferredNames {
-            if let v = availableVoices.first(where: { $0.name.localizedCaseInsensitiveContains(pref) && $0.language.starts(with: "en") }) {
+        // 2. Intelligent Persona Mapping for Cloud or Abstract IDs
+        let lower = voiceId.lowercased()
+        let wantsFemale = lower.contains("ava") || lower.contains("jenny") || lower.contains("emma") || lower.contains("female") || lower.contains("zoe") || lower.contains("samantha")
+        let wantsMale = lower.contains("andrew") || lower.contains("brian") || lower.contains("guy") || lower.contains("christopher") || lower.contains("male") || lower.contains("evan") || lower.contains("nathan")
+        let wantsBritish = lower.contains("ryan") || lower.contains("daniel") || lower.contains("oliver") || lower.contains("gb") || lower.contains("uk")
+
+        // Priority candidate names in order of realistic human quality
+        var candidateNames: [String] = []
+        if wantsBritish {
+            candidateNames = ["Oliver", "Daniel", "Serena", "Stephanie", "Arthur"]
+        } else if wantsFemale {
+            candidateNames = ["Ava", "Zoe", "Allison", "Samantha", "Susan", "Victoria", "Nicky", "Karen"]
+        } else if wantsMale {
+            candidateNames = ["Evan", "Nathan", "Tom", "Oliver", "Daniel", "Arthur", "Aaron"]
+        } else {
+            // General best-sounding storytellers (warm, conversational)
+            candidateNames = ["Ava", "Evan", "Nathan", "Zoe", "Samantha", "Oliver", "Daniel", "Arthur"]
+        }
+
+        // Try Premium quality first
+        for name in candidateNames {
+            if let v = humanVoices.first(where: { $0.quality == .premium && $0.name.localizedCaseInsensitiveContains(name) }) {
                 return v
             }
         }
 
-        return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) ?? availableVoices.first ?? AVSpeechSynthesisVoice()
+        // Try Enhanced quality second
+        for name in candidateNames {
+            if let v = humanVoices.first(where: { $0.quality == .enhanced && $0.name.localizedCaseInsensitiveContains(name) }) {
+                return v
+            }
+        }
+
+        // Try standard quality matching candidate names
+        for name in candidateNames {
+            if let v = humanVoices.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) {
+                return v
+            }
+        }
+
+        // Fallback: Highest quality English voice that is not robotic
+        let sortedByQuality = humanVoices.sorted { (v1, v2) -> Bool in
+            let q1 = v1.quality == .premium ? 3 : (v1.quality == .enhanced ? 2 : 1)
+            let q2 = v2.quality == .premium ? 3 : (v2.quality == .enhanced ? 2 : 1)
+            return q1 > q2
+        }
+
+        return sortedByQuality.first ?? AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice()
     }
 
     /// Distributes word timings accurately within a chunk's actual audio timeframe.
@@ -316,26 +367,19 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
-    /// Lists all installed high-quality speech voices for the UI picker
+    /// Lists all available ultra-human and studio neural voices for the UI picker
     public func getAvailableVoices() -> [PresetOption] {
-        let all = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.starts(with: "en") }
-        var list: [PresetOption] = [
-            PresetOption(id: "auto", name: "✨ AI Auto-Select", description: "Matches story tone and vibe automatically")
+        return [
+            PresetOption(id: "auto", name: "✨ AI Auto-Select (Smart Human Match)", description: "Auto-detects narrative vibe & persona"),
+            PresetOption(id: "Ava", name: "Ava (Ultra-Human Studio Female)", description: "Intimate, warm & conversational AITA/drama"),
+            PresetOption(id: "Evan", name: "Evan (Conversational Male)", description: "Natural pacing, real human vocal fry"),
+            PresetOption(id: "Nathan", name: "Nathan (Warm Storyteller Male)", description: "Deep & rich narrative cadence"),
+            PresetOption(id: "Zoe", name: "Zoe (Authentic Expressive Female)", description: "Dynamic & emotive revenge stories"),
+            PresetOption(id: "Oliver", name: "Oliver (British Storyteller Male)", description: "Sophisticated BBC-style documentary"),
+            PresetOption(id: "Samantha", name: "Samantha (Natural US Female)", description: "Clear & engaging everyday narrator"),
+            PresetOption(id: "en-US-AndrewMultilingualNeural", name: "Andrew (Cloud Neural HD - Male)", description: "Top viral TikTok/YouTube creator"),
+            PresetOption(id: "en-US-AvaMultilingualNeural", name: "Ava (Cloud Neural HD - Female)", description: "Deep emotion & confessions"),
+            PresetOption(id: "en-US-BrianMultilingualNeural", name: "Brian (Cloud Neural HD - True Crime)", description: "Deep baritone documentary")
         ]
-
-        let names = ["Samantha (Natural US)", "Daniel (British Narrator)", "Arthur (Deep & Clear)", "Karen (Australian)", "Alex (Classic)", "Fred (Fast & Punchy)"]
-        for name in names {
-            let key = name.components(separatedBy: " ").first ?? ""
-            if let found = all.first(where: { $0.name.localizedCaseInsensitiveContains(key) }) {
-                list.append(PresetOption(id: found.identifier, name: name, description: found.language))
-            }
-        }
-
-        if list.count <= 1 {
-            list.append(PresetOption(id: "en-US", name: "Default English (US)", description: "en-US"))
-            list.append(PresetOption(id: "en-GB", name: "British English (UK)", description: "en-GB"))
-        }
-
-        return list
     }
 }
