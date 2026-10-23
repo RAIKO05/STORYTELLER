@@ -34,10 +34,10 @@ jobs:
         run: |
           cd ios
           VERSION="1.0.${{ github.run_number }}"
-          echo "Setting up Info.plist version: $VERSION and Bundle ID: com.raiko.Storyteller"
+          echo "Setting up Info.plist version: $VERSION and Bundle ID: com.storyteller.app"
           plutil -replace CFBundleShortVersionString -string "$VERSION" Config/Info.plist || true
           plutil -replace CFBundleVersion -string "${{ github.run_number }}" Config/Info.plist || true
-          plutil -replace CFBundleIdentifier -string "com.raiko.Storyteller" Config/Info.plist || true
+          plutil -replace CFBundleIdentifier -string "com.storyteller.app" Config/Info.plist || true
           xcodegen generate
           sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' StoryTeller.xcodeproj/project.pbxproj || true
           sed -i '' 's/compatibilityVersion = "Xcode 16.0";/compatibilityVersion = "Xcode 15.0";/g' StoryTeller.xcodeproj/project.pbxproj || true
@@ -53,7 +53,7 @@ jobs:
             -derivedDataPath build/DerivedData \
             MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
-            PRODUCT_BUNDLE_IDENTIFIER="com.raiko.Storyteller" \
+            PRODUCT_BUNDLE_IDENTIFIER="com.storyteller.app" \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -74,7 +74,7 @@ jobs:
           echo "Verifying and updating App Payload Info.plist metadata..."
           plutil -replace CFBundleShortVersionString -string "$VERSION" build/Payload/StoryTeller.app/Info.plist || true
           plutil -replace CFBundleVersion -string "${{ github.run_number }}" build/Payload/StoryTeller.app/Info.plist || true
-          plutil -replace CFBundleIdentifier -string "com.raiko.Storyteller" build/Payload/StoryTeller.app/Info.plist || true
+          plutil -replace CFBundleIdentifier -string "com.storyteller.app" build/Payload/StoryTeller.app/Info.plist || true
           cd build
           VERSION_TAG="v1.0.${{ github.run_number }}"
           zip -qr "StoryTeller_${VERSION_TAG}.ipa" Payload
@@ -104,7 +104,7 @@ jobs:
             - **Direct Alias**: [`StoryTeller.ipa`](https://github.com/RAIKO05/STORYTELLER/releases/download/v1.0.${{ github.run_number }}/StoryTeller.ipa)
 
             #### ⚙️ App Identification:
-            - **Bundle Identifier**: `com.raiko.Storyteller`
+            - **Bundle Identifier**: `com.storyteller.app`
             - **App Version**: `1.0.${{ github.run_number }}` (Build `${{ github.run_number }}`)
 
             - **📱 100% On-Device Standalone**: Works anywhere directly on your iPhone! No PC or local Wi-Fi required.
