@@ -133,15 +133,14 @@ public struct CreatorView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     HStack(spacing: 8) {
-                        Image(systemName: "film.stack.fill")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [themeManager.currentTheme.accentColor, BayanTokens.goldSoft],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                        Image("AppLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(BayanTokens.glassGoldStroke, lineWidth: 0.8))
+                            .shadow(color: themeManager.currentTheme.accentColor.opacity(0.35), radius: 4)
+
                         Text("StoryTeller")
                             .font(.system(size: 18, weight: .heavy, design: .rounded))
                             .foregroundColor(themeManager.currentTheme.textPrimary)
