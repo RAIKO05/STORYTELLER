@@ -12,6 +12,7 @@ from app.config import (
     DEFAULT_SUBREDDITS,
     OUTPUTS_DIR,
     BACKGROUNDS_DIR,
+    AUDIO_DIR,
     CACHE_DIR
 )
 from app.scrapers.reddit import RedditScraper
@@ -22,7 +23,7 @@ from app.video.tts import TTSEngine
 from app.video.background import BackgroundManager, THEMATIC_QUERIES
 from app.video.generator import VideoGenerator
 
-app = FastAPI(title="Viral TikTok Story Generator", version="2.2.0")
+app = FastAPI(title="Viral TikTok Story Generator", version="2.3.0")
 
 # Services
 reddit_scraper = RedditScraper()
@@ -71,11 +72,28 @@ def get_presets():
         {"id": "auto", "name": "✨ AI Auto-Select (Matches Story & Persona)", "gender": "AI", "lang": "en"}
     ] + VOICE_PRESETS
 
+    bg_music = [
+        {"id": "none", "name": "🔇 None (Narration Only)"},
+        {"id": "cinematic_ambient", "name": "✨ Cinematic Ambient Glow (Soft Emotional Pad)"},
+        {"id": "dramatic_suspense", "name": "⚡ Dramatic Suspense (Deep Tension Drone)"},
+        {"id": "viral_pulse", "name": "🔥 Viral Synth Pulse (Energetic Rhythmic)"}
+    ]
+
+    fonts = [
+        {"id": "Arial Black", "name": "Arial Black (High Impact Viral - Default)"},
+        {"id": "Impact", "name": "Impact (Classic Meme & TikTok)"},
+        {"id": "Trebuchet MS", "name": "Trebuchet MS (Modern Clean Bold)"},
+        {"id": "Georgia", "name": "Georgia (Cinematic / Dramatic Mystery)"},
+        {"id": "Comic Sans MS", "name": "Comic Sans MS (Playful Comedy)"}
+    ]
+
     return {
         "voices": voices,
         "subreddits": DEFAULT_SUBREDDITS,
         "backgrounds": bg_options,
         "preset_bg_downloads": list(THEMATIC_QUERIES.values()),
+        "bg_music": bg_music,
+        "fonts": fonts,
         "subtitle_styles": [
             {"id": "auto", "name": "✨ AI Auto-Style (Pacing-Optimized)"},
             {"id": "karaoke", "name": "CapCut Karaoke (Word-by-word highlight)"},
@@ -87,6 +105,8 @@ def get_presets():
             {"id": "&H00FF00&", "name": "Neon Lime Green", "hex": "#00FF44"},
             {"id": "&HFFFF00&", "name": "Electric Cyan", "hex": "#00E5FF"},
             {"id": "&H0000FF&", "name": "Hot Coral Red", "hex": "#FF3344"},
+            {"id": "&H5BB1DF&", "name": "Imperial Amber Gold", "hex": "#DFB15B"},
+            {"id": "&HFFFFFF&", "name": "Crisp Pure White", "hex": "#FFFFFF"}
         ]
     }
 
@@ -108,45 +128,45 @@ def get_reddit_stories(subreddit: str = "AmItheAsshole", query: str = ""):
     stories = reddit_scraper.search_reddit_stories(subreddit=subreddit, query=query)
     return {"status": "success", "subreddit": subreddit, "stories": stories}
 
-class URLRequest(BaseModel):
+class ScrapeURLRequest(BaseModel):
     url: str
 
-@app.post("/api/reddit/url")
-def scrape_reddit_url(req: URLRequest):
+@app.post("/api/reddit/scrape-url")
+def scrape_reddit_url(req: ScrapeURLRequest):
     post = reddit_scraper.scrape_post_url(req.url)
     if not post:
         raise HTTPException(status_code=400, detail="Could not extract story from Reddit URL")
-    return {"status": "success", "post": post}
+    return {"status": "success", "story": post}
 
 # ----------------- QUORA -----------------
 @app.get("/api/quora/stories")
 def get_quora_stories(query: str = "viral secrets"):
-    stories = quora_scraper.search_quora_stories(query=query)
-    return {"status": "success", "stories": stories}
+    stories = quora_scraper.search_topics(query)
+    return {"status": "success", "query": query, "stories": stories}
 
-@app.post("/api/quora/url")
-def scrape_quora_url(req: URLRequest):
+@app.post("/api/quora/scrape-url")
+def scrape_quora_url(req: ScrapeURLRequest):
     post = quora_scraper.scrape_url(req.url)
     if not post:
         raise HTTPException(status_code=400, detail="Could not extract story from Quora URL")
-    return {"status": "success", "post": post}
+    return {"status": "success", "story": post}
 
 # ----------------- YOUTUBE -----------------
-@app.post("/api/youtube/transcript")
-def get_youtube_transcript(req: URLRequest):
-    data = youtube_scraper.fetch_video_transcript(req.url)
-    if not data:
-        raise HTTPException(status_code=400, detail="Could not retrieve transcript from YouTube video")
-    return {"status": "success", "video": data}
+@app.post("/api/youtube/scrape")
+def scrape_youtube(req: ScrapeURLRequest):
+    res = youtube_scraper.scrape_transcript(req.url)
+    if not res:
+        raise HTTPException(status_code=400, detail="Could not extract transcript from YouTube URL")
+    return {"status": "success", "data": res}
 
-# ----------------- AI STORY GENERATOR -----------------
+# ----------------- AI STORY WRITER -----------------
 class AIGenerateRequest(BaseModel):
     category: str = "aita"
     prompt: Optional[str] = ""
     duration: int = 60
     api_key: Optional[str] = None
 
-@app.post("/api/ai/generate")
+@app.post("/api/ai/generate-story")
 def generate_ai_story(req: AIGenerateRequest):
     generator = AIViralStoryGenerator(api_key=req.api_key)
     story = generator.generate_story(
@@ -216,6 +236,14 @@ async def upload_background(file: UploadFile = File(...)):
         f.write(await file.read())
     return {"status": "success", "filename": filename}
 
+@app.post("/api/audio/upload")
+async def upload_audio(file: UploadFile = File(...)):
+    filename = file.filename.replace(" ", "_")
+    target = AUDIO_DIR / filename
+    with open(target, "wb") as f:
+        f.write(await file.read())
+    return {"status": "success", "filename": filename}
+
 # ----------------- VIDEO GENERATION -----------------
 class GenerateVideoRequest(BaseModel):
     title: str
@@ -225,7 +253,15 @@ class GenerateVideoRequest(BaseModel):
     pitch: str = "+0Hz"
     subtitle_style: str = "auto"
     highlight_color: str = "auto"
+    font_name: str = "Arial Black"
+    font_size: int = 70
+    margin_v: int = 650
+    text_case: str = "upper"
     background_id: Optional[str] = "auto"
+    bg_music_id: Optional[str] = None
+    bg_music_volume: float = 0.15
+    voice_volume: float = 1.0
+    custom_bg_music_filename: Optional[str] = None
 
 @app.post("/api/video/generate")
 async def generate_video(req: GenerateVideoRequest):
@@ -238,6 +274,12 @@ async def generate_video(req: GenerateVideoRequest):
     def update_progress(msg: str, pct: int):
         active_jobs[job_id] = {"status": msg, "percent": pct}
 
+    custom_music_path = None
+    if req.custom_bg_music_filename:
+        cand = AUDIO_DIR / req.custom_bg_music_filename
+        if cand.exists():
+            custom_music_path = str(cand)
+
     try:
         result = await video_gen.generate_tiktok_video(
             title=req.title,
@@ -247,7 +289,15 @@ async def generate_video(req: GenerateVideoRequest):
             pitch=req.pitch,
             subtitle_style=req.subtitle_style,
             highlight_color=req.highlight_color,
+            font_name=req.font_name,
+            font_size=req.font_size,
+            margin_v=req.margin_v,
+            text_case=req.text_case,
             background_id=req.background_id,
+            bg_music_id=req.bg_music_id,
+            bg_music_volume=req.bg_music_volume,
+            voice_volume=req.voice_volume,
+            custom_bg_music_path=custom_music_path,
             status_callback=update_progress
         )
         active_jobs[job_id] = {"status": "Done", "percent": 100, "result": result}
@@ -279,3 +329,17 @@ def get_gallery():
         })
     videos.sort(key=lambda x: x["created_at"], reverse=True)
     return {"status": "success", "videos": videos}
+
+@app.delete("/api/gallery/{filename}")
+def delete_gallery_video(filename: str):
+    target = OUTPUTS_DIR / filename
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="Video file not found")
+    try:
+        target.unlink()
+        thumb = target.with_name(f"{target.stem}_thumb.jpg")
+        if thumb.exists():
+            thumb.unlink()
+        return {"status": "success", "deleted": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral TikTok Video Generator - StoryTeller AI</title>
+    <title>StoryTeller Pro - Viral TikTok & Shorts Video Studio</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,15 +13,15 @@
         <!-- Top Navigation Bar -->
         <header class="navbar">
             <div class="nav-brand">
-                <div class="logo-icon">🎬</div>
+                <img src="/static/logo.png" alt="StoryTeller Logo" class="logo-img">
                 <div>
                     <h1>STORYTELLER <span>PRO</span></h1>
-                    <p class="tagline">Viral TikTok & Shorts Video Automation Studio</p>
+                    <p class="tagline">Cinematic Studio & Viral Video Automation</p>
                 </div>
             </div>
             <div class="nav-badges">
-                <span class="badge badge-purple"><span class="dot"></span> 🤖 AI Voice Matcher Active</span>
-                <span class="badge badge-success"><span class="dot"></span> 🎮 B-Roll Auto-Scrubber</span>
+                <span class="badge badge-gold"><span class="dot"></span> 🎬 Cinematic Studio v2.3</span>
+                <span class="badge badge-gold"><span class="dot"></span> 🤖 AI Persona & Tone Matching</span>
                 <span class="badge badge-success"><span class="dot"></span> 9:16 Vertical 1080p</span>
             </div>
         </header>
@@ -42,19 +43,19 @@
                     <!-- Source Selector Tabs -->
                     <div class="source-tabs">
                         <button class="tab-btn active" data-tab="reddit">
-                            <span class="tab-icon">🔥</span> Reddit
+                            <span>🔥</span> Reddit
                         </button>
                         <button class="tab-btn" data-tab="quora">
-                            <span class="tab-icon">💡</span> Quora
+                            <span>💡</span> Quora
                         </button>
                         <button class="tab-btn" data-tab="youtube">
-                            <span class="tab-icon">▶️</span> YouTube
+                            <span>▶️</span> YouTube
                         </button>
                         <button class="tab-btn" data-tab="ai">
-                            <span class="tab-icon">✨</span> AI Writer
+                            <span>✨</span> AI Writer
                         </button>
                         <button class="tab-btn" data-tab="manual">
-                            <span class="tab-icon">✍️</span> Custom
+                            <span>✍️</span> Custom
                         </button>
                     </div>
 
@@ -64,12 +65,12 @@
                             <div class="form-group flex-2">
                                 <label>Subreddit</label>
                                 <select id="reddit-subreddit-select" class="form-control">
-                                    <option value="AmItheAsshole">r/AmItheAsshole (AITA)</option>
-                                    <option value="tifu">r/tifu (Today I Messed Up)</option>
-                                    <option value="confession">r/confession (Secrets)</option>
-                                    <option value="TrueOffMyChest">r/TrueOffMyChest</option>
-                                    <option value="AskReddit">r/AskReddit</option>
-                                    <option value="maliciouscompliance">r/maliciouscompliance (Revenge)</option>
+                                    <option value="AmItheAsshole">r/AmItheAsshole (AITA Moral Dilemmas)</option>
+                                    <option value="maliciouscompliance">r/maliciouscompliance (Petty Revenge)</option>
+                                    <option value="tifu">r/tifu (Today I Screwed Up)</option>
+                                    <option value="confession">r/confession (Deep Secrets)</option>
+                                    <option value="TrueOffMyChest">r/TrueOffMyChest (Venting)</option>
+                                    <option value="AskReddit">r/AskReddit (Wild Stories)</option>
                                 </select>
                             </div>
                             <div class="form-group flex-1" style="align-self: flex-end;">
@@ -105,7 +106,7 @@
 
                     <!-- TAB 3: YOUTUBE -->
                     <div class="tab-pane" id="tab-youtube">
-                        <label>YouTube Video URL (Scrapes transcript & auto-formats into viral script)</label>
+                        <label>YouTube Video URL (Extracts narrative transcript without truncation)</label>
                         <div class="form-row">
                             <input type="text" id="youtube-url-input" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
                             <button id="btn-fetch-youtube" class="btn btn-primary">Extract Transcript</button>
@@ -133,9 +134,10 @@
                             <div class="form-group flex-1">
                                 <label>Target Duration</label>
                                 <select id="ai-duration-select" class="form-control">
-                                    <option value="45">~45s (Fast retention)</option>
+                                    <option value="45">~45s (Fast hook)</option>
                                     <option value="60" selected>~60s (Standard TikTok)</option>
-                                    <option value="90">~90s (In-depth story)</option>
+                                    <option value="90">~90s (Full story narrative)</option>
+                                    <option value="120">~120s (Extended deep dive)</option>
                                 </select>
                             </div>
                         </div>
@@ -144,30 +146,37 @@
                             <input type="text" id="ai-prompt-input" class="form-control" placeholder="e.g. My boss fired me for taking a lunch break...">
                         </div>
                         <div class="form-group">
-                            <label>Gemini API Key (Optional - Fallback template engine works offline)</label>
+                            <label>Gemini API Key (Optional - built-in offline viral engine available)</label>
                             <input type="password" id="gemini-key-input" class="form-control" placeholder="AIzaSy... (leave empty for built-in viral engine)">
                         </div>
-                        <button id="btn-generate-ai" class="btn btn-purple w-100">
-                            ✨ Generate Viral Script with AI
+                        <button id="btn-generate-ai" class="btn btn-primary w-100">
+                            ✨ Generate Full Viral Script with AI
                         </button>
                     </div>
 
-                    <!-- STORY EDITOR -->
+                    <!-- TAB 5: CUSTOM / MANUAL -->
+                    <div class="tab-pane" id="tab-manual">
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                            ✍️ Paste or type any custom story below. StoryTeller processes full stories of any length without cutting off text.
+                        </p>
+                    </div>
+
+                    <!-- STORY SCRIPT EDITOR -->
                     <div class="story-editor-box">
                         <div class="editor-header">
                             <label>ACTIVE STORY SCRIPT</label>
-                            <span id="word-counter" class="counter-badge">0 words (~0s)</span>
+                            <span id="word-counter" class="counter-badge">0 words • ~0s video</span>
                         </div>
-                        <input type="text" id="story-title" class="form-control title-input" placeholder="Viral Hook Title (e.g. AITA for canceling my wedding?)">
-                        <textarea id="story-text" class="form-control story-textarea" rows="5" placeholder="Paste or edit the viral story text here..."></textarea>
+                        <input type="text" id="story-title" class="form-control title-input" placeholder="Viral Hook Title (e.g. AITA for uninviting my sister...)">
+                        <textarea id="story-text" class="form-control story-textarea" rows="6" placeholder="Paste or edit the full story text here... Newlines and multiple paragraphs are fully supported!"></textarea>
                     </div>
 
                     <!-- AI MATCH INTELLIGENCE CARD -->
                     <div id="ai-vibe-box" class="ai-vibe-card" style="display: none;">
                         <div class="vibe-header">
-                            <span class="vibe-sparkle">🤖</span>
+                            <span class="vibe-sparkle">✨</span>
                             <div>
-                                <h4 id="vibe-title">AI Story & Voice Matcher</h4>
+                                <h4 id="vibe-title">AI Persona & Tone Match</h4>
                                 <p id="vibe-rationale" class="vibe-text">Analyzing narrative tone and emotion...</p>
                             </div>
                         </div>
@@ -177,19 +186,19 @@
                             <span class="vibe-pill vibe-pill-bg" id="vibe-tag-bg">🎬 B-Roll: Auto-Scrub</span>
                             <span class="vibe-pill" id="vibe-tag-speed">⚡ Pacing: Optimal</span>
                         </div>
-                        <button id="btn-apply-vibe" class="btn btn-xs btn-purple" style="margin-top: 8px;">
+                        <button id="btn-apply-vibe" class="btn btn-xs btn-secondary" style="margin-top: 8px;">
                             ✨ Apply AI Recommended Settings
                         </button>
                     </div>
                 </div>
 
-                <!-- STEP 2: VOICE & AUDIO -->
+                <!-- STEP 2: VOICE & AUDIO CUSTOMIZER -->
                 <div class="section-card">
                     <div class="section-header">
                         <span class="step-num">2</span>
                         <div>
-                            <h2>Voice & Speech Pacing</h2>
-                            <p>Select voice narrator or keep AI Auto-Match to automatically fit the story's emotion</p>
+                            <h2>Voice & Audio Customizer</h2>
+                            <p>Choose neural narrator, speed pacing, and mix ambient background music</p>
                         </div>
                     </div>
 
@@ -212,22 +221,60 @@
                         </div>
                     </div>
 
-                    <div class="audio-preview-row">
-                        <button id="btn-preview-audio" class="btn btn-secondary">
-                            🔊 Test Voice Sample
-                        </button>
+                    <!-- Voice Volume & Audio Preview -->
+                    <div class="form-row" style="align-items: center;">
+                        <div class="form-group flex-1">
+                            <label>Voiceover Volume</label>
+                            <div class="slider-group">
+                                <input type="range" id="voice-vol-slider" min="50" max="150" value="100">
+                                <span id="voice-vol-val" class="slider-val">100%</span>
+                            </div>
+                        </div>
+                        <div class="form-group flex-1" style="align-self: flex-end;">
+                            <button id="btn-preview-audio" class="btn btn-secondary w-100">
+                                🔊 Test Voice Sample
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="audio-preview-row" style="margin-bottom: 12px;">
                         <span id="preview-voice-indicator" class="text-muted" style="font-size: 11px;"></span>
-                        <audio id="audio-preview-player" controls style="display: none; height: 36px;"></audio>
+                        <audio id="audio-preview-player" controls style="display: none; width: 100%; height: 36px; margin-top: 6px;"></audio>
+                    </div>
+
+                    <!-- Background Music Mixing -->
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label>Background Music</label>
+                            <select id="bg-music-select" class="form-control">
+                                <option value="none" selected>🔇 None (Narration Only)</option>
+                                <option value="cinematic_ambient">✨ Cinematic Ambient Glow (Soft Pad)</option>
+                                <option value="dramatic_suspense">⚡ Dramatic Suspense (Deep Tension)</option>
+                                <option value="viral_pulse">🔥 Viral Synth Pulse (Rhythmic)</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>BGM Volume (Duck Mix)</label>
+                            <div class="slider-group">
+                                <input type="range" id="bgm-vol-slider" min="0" max="45" value="15">
+                                <span id="bgm-vol-val" class="slider-val">15%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Or Upload Custom Background Music (MP3, WAV, M4A)</label>
+                        <input type="file" id="upload-bgm-input" accept="audio/*" class="form-control file-input">
                     </div>
                 </div>
 
-                <!-- STEP 3: BACKGROUND SCRUBBING & SUBTITLES -->
+                <!-- STEP 3: BACKGROUND FOOTAGE & SUBTITLE CUSTOMIZER -->
                 <div class="section-card">
                     <div class="section-header">
                         <span class="step-num">3</span>
                         <div>
-                            <h2>Background Footage & Subtitles</h2>
-                            <p>AI auto-scrubs vertical 9:16 gameplay b-roll and formats dynamic karaoke captions</p>
+                            <h2>Background Footage & Subtitle Styling</h2>
+                            <p>Customize vertical 9:16 footage, dynamic karaoke animations, and font typography</p>
                         </div>
                     </div>
 
@@ -235,33 +282,78 @@
                         <div class="form-group flex-1">
                             <label>Background Footage (Auto-Scrub)</label>
                             <select id="background-select" class="form-control">
-                                <option value="auto" selected>✨ AI Auto-Scrub (Auto-matches story mood)</option>
+                                <option value="auto" selected>✨ AI Auto-Scrub (Matches story mood)</option>
                             </select>
                         </div>
                         <div class="form-group flex-1">
-                            <label>Subtitle Animation</label>
+                            <label>Upload Custom MP4 B-Roll</label>
+                            <input type="file" id="upload-bg-input" accept="video/mp4,video/quicktime" class="form-control file-input">
+                        </div>
+                    </div>
+
+                    <!-- Subtitle Style & Colors -->
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Subtitle Animation Style</label>
                             <select id="subtitle-style-select" class="form-control">
                                 <option value="auto" selected>✨ AI Auto-Style (Pacing-Optimized)</option>
-                                <option value="karaoke">CapCut Karaoke (Word Highlight)</option>
-                                <option value="single">MrBeast Bouncing Word</option>
+                                <option value="karaoke">CapCut Karaoke (Word-by-word Highlight)</option>
+                                <option value="single">MrBeast Bouncing Word (High Velocity)</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Highlight Accent Color</label>
+                            <select id="color-select" class="form-control">
+                                <option value="auto" selected>✨ AI Auto-Color (High Contrast)</option>
+                                <option value="&H00FFFF&">TikTok Neon Yellow (#FFEE00)</option>
+                                <option value="&H00FF00&">Neon Lime Green (#00FF44)</option>
+                                <option value="&HFFFF00&">Electric Cyan (#00E5FF)</option>
+                                <option value="&H0000FF&">Hot Coral Red (#FF3344)</option>
+                                <option value="&H5BB1DF&">Imperial Amber Gold (#DFB15B)</option>
+                                <option value="&HFFFFFF&">Crisp Pure White (#FFFFFF)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Typography Customization -->
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Font Family</label>
+                            <select id="font-select" class="form-control">
+                                <option value="Arial Black" selected>Arial Black (High Impact Viral)</option>
+                                <option value="Impact">Impact (Classic Meme & TikTok)</option>
+                                <option value="Trebuchet MS">Trebuchet MS (Modern Clean Bold)</option>
+                                <option value="Georgia">Georgia (Cinematic / Dramatic Mystery)</option>
+                                <option value="Comic Sans MS">Comic Sans MS (Playful Comedy)</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Font Size</label>
+                            <select id="font-size-select" class="form-control">
+                                <option value="55">Compact (55pt)</option>
+                                <option value="70" selected>Standard (70pt - Default)</option>
+                                <option value="85">Large (85pt - Punchy)</option>
+                                <option value="100">Giant (100pt - Maximum Impact)</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group flex-1">
-                            <label>Active Word Highlight Color</label>
-                            <select id="color-select" class="form-control">
-                                <option value="auto" selected>✨ AI Auto-Color (High Contrast)</option>
-                                <option value="&H00FFFF&">TikTok Neon Yellow (#FFEE00)</option>
-                                <option value="&H00FF00&">Neon Lime Green (#00FF44)</option>
-                                <option value="&HFFFF00&">Electric Cyan (#00E5FF)</option>
-                                <option value="&H0000FF&">Hot Red (#FF3344)</option>
+                            <label>Vertical Position</label>
+                            <select id="margin-v-select" class="form-control">
+                                <option value="650" selected>Lower-Third (TikTok Safe Zone)</option>
+                                <option value="950">Center Screen (High Focus)</option>
+                                <option value="1250">Upper Center (Floating)</option>
                             </select>
                         </div>
                         <div class="form-group flex-1">
-                            <label>Upload Custom MP4 Background</label>
-                            <input type="file" id="upload-bg-input" accept="video/mp4,video/quicktime" class="form-control file-input">
+                            <label>Text Case</label>
+                            <select id="case-select" class="form-control">
+                                <option value="upper" selected>UPPERCASE (Viral Standard)</option>
+                                <option value="title">Title Case (Book Style)</option>
+                                <option value="normal">Natural Sentence Case</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -278,7 +370,7 @@
                             <div id="render-progress-fill" class="progress-bar-fill"></div>
                         </div>
                         <div class="progress-meta">
-                            <span id="render-status-text">Processing...</span>
+                            <span id="render-status-text">Processing full story...</span>
                             <span id="render-pct-text">0%</span>
                         </div>
                     </div>
@@ -300,7 +392,7 @@
                             Your browser does not support HTML5 video.
                         </video>
                         <div id="player-placeholder" class="placeholder-overlay">
-                            <div class="icon">✨</div>
+                            <div class="icon">🎬</div>
                             <h3>Video Preview Ready Soon</h3>
                             <p>Pick a story and click "Generate Viral TikTok Video" to render</p>
                         </div>
@@ -324,11 +416,11 @@
                     </div>
                 </div>
 
-                <!-- Video Gallery -->
+                <!-- Video Gallery Library -->
                 <div class="gallery-section">
                     <div class="gallery-header">
                         <h4>📼 Generated Videos Library</h4>
-                        <button id="btn-refresh-gallery" class="btn-icon" title="Refresh">🔄</button>
+                        <button id="btn-refresh-gallery" class="btn-icon" title="Refresh Library">🔄</button>
                     </div>
                     <div id="gallery-grid" class="gallery-grid">
                         <p class="empty-text">No videos rendered yet.</p>

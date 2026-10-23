@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Callable
 
-from app.config import OUTPUTS_DIR, CACHE_DIR, VIDEO_WIDTH, VIDEO_HEIGHT
+from app.config import OUTPUTS_DIR, CACHE_DIR, AUDIO_DIR, VIDEO_WIDTH, VIDEO_HEIGHT
 from app.utils.helpers import slugify
 from app.video.tts import TTSEngine
 from app.video.subtitles import SubtitleGenerator
@@ -28,17 +28,24 @@ class VideoGenerator:
         pitch: str = "+0Hz",
         subtitle_style: str = "auto",
         highlight_color: str = "auto",
+        font_name: str = "Arial Black",
+        font_size: int = 70,
+        margin_v: int = 650,
+        text_case: str = "upper",
         background_id: Optional[str] = "auto",
         bg_music_id: Optional[str] = None,
+        bg_music_volume: float = 0.15,
+        voice_volume: float = 1.0,
+        custom_bg_music_path: Optional[str] = None,
         status_callback: Optional[Callable[[str, int], None]] = None
     ) -> Dict:
         """
-        Orchestrates full generation with AI Voice Matching & Auto-Scrubbing Background:
+        Orchestrates full generation with AI Voice Matching, Audio Mixing & Auto-Scrubbed Background:
         1. AI Story Analysis (detects tone, picks best narrator, rate, background theme & colors)
         2. Auto-scrubs or preps vertical 9:16 background
-        3. Generates TTS Speech & Timings
-        4. Dynamic Karaoke Subtitles
-        5. Blazing-fast Single-pass FFmpeg Assembly
+        3. Generates TTS Speech & Timings without truncation
+        4. Dynamic Karaoke Subtitles with custom typography
+        5. Single-pass FFmpeg Assembly with optional background music mixing
         """
         timestamp = int(time.time())
         slug = slugify(title if title else "tiktok_story", max_length=25)
@@ -86,7 +93,7 @@ class VideoGenerator:
         duration = tts_result["duration"]
         words = tts_result["words"]
 
-        # Step 2: Generate Karaoke ASS Subtitles
+        # Step 2: Generate Karaoke ASS Subtitles with custom typography
         if status_callback:
             status_callback("Generating dynamic karaoke subtitles...", 45)
             
@@ -94,7 +101,11 @@ class VideoGenerator:
             words=words,
             output_path=ass_path,
             style_mode=final_style,
-            highlight_color=final_color
+            highlight_color=final_color,
+            font_name=font_name,
+            font_size=font_size,
+            margin_v=margin_v,
+            text_case=text_case
         )
 
         # Step 3: Scrub / Resolve Thematic Background
@@ -109,7 +120,18 @@ class VideoGenerator:
             max_start = int(source_dur - duration - 2)
             start_offset = random.randint(0, max(max_start, 1))
 
-        # Step 4: Single-Pass FFmpeg Assembly & Subtitle Burn-In
+        # Step 4: Resolve Background Music
+        resolved_bg_music_path = None
+        if custom_bg_music_path and Path(custom_bg_music_path).exists():
+            resolved_bg_music_path = Path(custom_bg_music_path)
+        elif bg_music_id and bg_music_id != "none" and bg_music_id != "auto":
+            for ext in [".m4a", ".mp3", ".wav"]:
+                candidate = AUDIO_DIR / f"{bg_music_id}{ext}"
+                if candidate.exists():
+                    resolved_bg_music_path = candidate
+                    break
+
+        # Step 5: Single-Pass FFmpeg Assembly & Subtitle Burn-In
         if status_callback:
             status_callback("Encoding viral TikTok MP4 video in single-pass...", 80)
 
@@ -122,25 +144,55 @@ class VideoGenerator:
             f"ass='{escaped_ass}'"
         )
 
-        cmd = [
-            "ffmpeg", "-y",
-            "-stream_loop", "-1",
-            "-ss", str(start_offset),
-            "-i", str(bg_path),
-            "-i", str(audio_path),
-            "-t", str(duration),
-            "-vf", vf_filter,
-            "-c:v", "libx264",
-            "-preset", "veryfast",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-pix_fmt", "yuv420p",
-            str(final_video_path)
-        ]
+        if resolved_bg_music_path:
+            # Dual-input audio mix: Voiceover + Background Music
+            filter_complex = (
+                f"[0:v]{vf_filter}[vout];"
+                f"[1:a]volume={voice_volume}[voice];"
+                f"[2:a]volume={bg_music_volume}[bgm];"
+                f"[voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+            )
+            cmd = [
+                "ffmpeg", "-y",
+                "-stream_loop", "-1",
+                "-ss", str(start_offset),
+                "-i", str(bg_path),
+                "-i", str(audio_path),
+                "-stream_loop", "-1",
+                "-i", str(resolved_bg_music_path),
+                "-t", str(duration),
+                "-filter_complex", filter_complex,
+                "-map", "[vout]",
+                "-map", "[aout]",
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-pix_fmt", "yuv420p",
+                str(final_video_path)
+            ]
+        else:
+            cmd = [
+                "ffmpeg", "-y",
+                "-stream_loop", "-1",
+                "-ss", str(start_offset),
+                "-i", str(bg_path),
+                "-i", str(audio_path),
+                "-t", str(duration),
+                "-vf", vf_filter,
+                "-map", "0:v",
+                "-map", "1:a",
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-pix_fmt", "yuv420p",
+                str(final_video_path)
+            ]
 
         subprocess.run(cmd, check=True, capture_output=True)
 
-        # Step 5: Generate Thumbnail
+        # Step 6: Generate Thumbnail
         try:
             thumb_cmd = [
                 "ffmpeg", "-y",
@@ -150,17 +202,17 @@ class VideoGenerator:
                 "-q:v", "2",
                 str(thumb_path)
             ]
-            subprocess.run(thumb_cmd, capture_output=True)
+            subprocess.run(thumb_cmd, check=True, capture_output=True)
         except Exception:
             pass
 
         if status_callback:
-            status_callback("Video generation completed!", 100)
+            status_callback("Complete! Video ready for TikTok & Shorts", 100)
 
-        # Generate viral TikTok hashtags & caption
-        category_tag = f"#{vibe_analysis['vibe_key']}story"
-        hashtags = f"#redditstories #storytime #fyp #viral #foryou #askreddit {category_tag} #dailyvibes"
-        tiktok_caption = f"{title}\n\nWhat would you do? Drop your thoughts below 👇\n\n{hashtags}"
+        # Social Metadata
+        safe_title = title.replace('"', '')
+        caption = f"{safe_title} 🤯 What would you do in this situation? Let me know in the comments! 👇"
+        hashtags = "#fyp #storytime #redditstories #aita #viral #tiktok #trending #storytelling"
 
         return {
             "job_id": job_id,
@@ -169,17 +221,8 @@ class VideoGenerator:
             "video_path": str(final_video_path),
             "video_filename": final_video_path.name,
             "thumbnail_filename": thumb_path.name if thumb_path.exists() else None,
-            "caption": tiktok_caption,
+            "caption": caption,
             "hashtags": hashtags,
             "word_count": len(words),
-            "ai_match": {
-                "vibe": vibe_analysis["vibe"],
-                "voice": final_voice,
-                "voice_name": vibe_analysis["voice_name"],
-                "rate": final_rate,
-                "background": final_bg,
-                "bg_name": vibe_analysis["bg_name"],
-                "color": final_color,
-                "rationale": vibe_analysis["rationale"]
-            }
+            "ai_match": vibe_analysis
         }

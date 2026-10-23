@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let presets = null;
     let latestAnalysis = null;
     let analyzeTimeout = null;
+    let customBgmFilename = null;
 
     // Elements
     const wordCounter = document.getElementById("word-counter");
@@ -11,9 +12,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const voiceSelect = document.getElementById("voice-select");
     const rateSelect = document.getElementById("rate-select");
+    const voiceVolSlider = document.getElementById("voice-vol-slider");
+    const voiceVolVal = document.getElementById("voice-vol-val");
+
+    const bgMusicSelect = document.getElementById("bg-music-select");
+    const bgmVolSlider = document.getElementById("bgm-vol-slider");
+    const bgmVolVal = document.getElementById("bgm-vol-val");
+    const uploadBgmInput = document.getElementById("upload-bgm-input");
+
     const bgSelect = document.getElementById("background-select");
+    const uploadBgInput = document.getElementById("upload-bg-input");
+
     const subStyleSelect = document.getElementById("subtitle-style-select");
     const colorSelect = document.getElementById("color-select");
+    const fontSelect = document.getElementById("font-select");
+    const fontSizeSelect = document.getElementById("font-size-select");
+    const marginVSelect = document.getElementById("margin-v-select");
+    const caseSelect = document.getElementById("case-select");
 
     const aiVibeBox = document.getElementById("ai-vibe-box");
     const vibeTitle = document.getElementById("vibe-title");
@@ -38,6 +53,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const captionTextArea = document.getElementById("caption-text-area");
     const galleryGrid = document.getElementById("gallery-grid");
 
+    // Slider Listeners
+    voiceVolSlider.addEventListener("input", () => {
+        voiceVolVal.innerText = `${voiceVolSlider.value}%`;
+    });
+
+    bgmVolSlider.addEventListener("input", () => {
+        bgmVolVal.innerText = `${bgmVolSlider.value}%`;
+    });
+
+    // Custom BGM Upload
+    uploadBgmInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const res = await fetch("/api/audio/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.status === "success") {
+                customBgmFilename = data.filename;
+                const opt = document.createElement("option");
+                opt.value = "custom";
+                opt.text = `🎵 Custom: ${data.filename}`;
+                bgMusicSelect.appendChild(opt);
+                bgMusicSelect.value = "custom";
+                alert(`Uploaded background music: ${data.filename}`);
+            }
+        } catch (err) {
+            alert("Music upload failed: " + err);
+        }
+    });
+
+    // Custom B-Roll Upload
+    uploadBgInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const res = await fetch("/api/backgrounds/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.status === "success") {
+                alert(`Uploaded ${data.filename}! Reloading backgrounds...`);
+                loadPresets();
+            }
+        } catch (err) {
+            alert("Upload failed: " + err);
+        }
+    });
+
     // Initialize Presets
     async function loadPresets() {
         try {
@@ -45,14 +110,32 @@ document.addEventListener("DOMContentLoaded", () => {
             presets = await res.json();
 
             // Populate Voices
-            voiceSelect.innerHTML = presets.voices.map(v => 
-                `<option value="${v.id}" ${v.id === "auto" ? "selected" : ""}>${v.name}</option>`
-            ).join("");
+            if (presets.voices) {
+                voiceSelect.innerHTML = presets.voices.map(v => 
+                    `<option value="${v.id}" ${v.id === "auto" ? "selected" : ""}>${v.name}</option>`
+                ).join("");
+            }
 
             // Populate Backgrounds
-            bgSelect.innerHTML = presets.backgrounds.map(b => 
-                `<option value="${b.id}" ${b.id === "auto" ? "selected" : ""}>${b.category ? `[${b.category}] ` : ""}${b.name}</option>`
-            ).join("");
+            if (presets.backgrounds) {
+                bgSelect.innerHTML = presets.backgrounds.map(b => 
+                    `<option value="${b.id}" ${b.id === "auto" ? "selected" : ""}>${b.category ? `[${b.category}] ` : ""}${b.name}</option>`
+                ).join("");
+            }
+
+            // Populate Background Music if available
+            if (presets.bg_music) {
+                bgMusicSelect.innerHTML = presets.bg_music.map(m => 
+                    `<option value="${m.id}" ${m.id === "none" ? "selected" : ""}>${m.name}</option>`
+                ).join("");
+            }
+
+            // Populate Fonts if available
+            if (presets.fonts) {
+                fontSelect.innerHTML = presets.fonts.map(f => 
+                    `<option value="${f.id}" ${f.id === "Arial Black" ? "selected" : ""}>${f.name}</option>`
+                ).join("");
+            }
 
             loadGallery();
         } catch (e) {
@@ -100,42 +183,29 @@ document.addEventListener("DOMContentLoaded", () => {
         btnApplyVibe.innerText = "✅ AI Settings Applied!";
         setTimeout(() => {
             btnApplyVibe.innerText = "✨ Apply AI Recommended Settings";
-        }, 2000);
-        updateWordCount();
+        }, 2200);
     });
 
-    // Word Counter & Live Analysis
-    function handleStoryChange() {
+    // Word Counter
+    function updateWordCount() {
         const text = storyTextInput.value.trim();
-        const title = storyTitleInput.value.trim();
-        const words = text ? text.split(/\s+/).length : 0;
-        
-        let speed = 1.1;
-        if (rateSelect.value === "+25%") speed = 1.25;
-        else if (rateSelect.value === "+18%") speed = 1.18;
-        else if (rateSelect.value === "+15%") speed = 1.15;
-        else if (rateSelect.value === "+8%") speed = 1.08;
-        else if (rateSelect.value === "+0%") speed = 1.0;
+        const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+        const seconds = Math.round((words / 150) * 60);
+        wordCounter.innerText = `${words} words • ~${seconds}s video`;
 
-        const estSeconds = Math.round((words / (150 * speed)) * 60);
-        wordCounter.innerText = `${words} words (~${estSeconds}s)`;
-
-        // Debounced AI analysis
         clearTimeout(analyzeTimeout);
         analyzeTimeout = setTimeout(() => {
-            analyzeStory(text, title);
-        }, 600);
+            analyzeStory(text, storyTitleInput.value.trim());
+        }, 400);
     }
 
-    storyTextInput.addEventListener("input", handleStoryChange);
-    storyTitleInput.addEventListener("input", handleStoryChange);
-    rateSelect.addEventListener("change", handleStoryChange);
-
-    function setStory(title, text) {
-        storyTitleInput.value = title || "";
-        storyTextInput.value = text || "";
-        handleStoryChange();
-    }
+    storyTextInput.addEventListener("input", updateWordCount);
+    storyTitleInput.addEventListener("input", () => {
+        clearTimeout(analyzeTimeout);
+        analyzeTimeout = setTimeout(() => {
+            analyzeStory(storyTextInput.value.trim(), storyTitleInput.value.trim());
+        }, 400);
+    });
 
     // Tab Switching
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -150,204 +220,211 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // 1. REDDIT ACTIONS
-    const redditSelect = document.getElementById("reddit-subreddit-select");
-    const btnFetchReddit = document.getElementById("btn-fetch-reddit");
-    const redditCards = document.getElementById("reddit-cards");
-    const redditUrlInput = document.getElementById("reddit-url-input");
-    const btnScrapeRedditUrl = document.getElementById("btn-scrape-reddit-url");
-
+    // 1. REDDIT SCRAPER
     async function fetchRedditStories() {
-        const sub = redditSelect.value;
-        redditCards.innerHTML = `<div class="empty-text">Fetching viral stories from r/${sub}...</div>`;
+        const sub = document.getElementById("reddit-subreddit-select").value;
+        const container = document.getElementById("reddit-cards");
+        container.innerHTML = "<p class='empty-text'>Fetching trending Reddit posts...</p>";
+
         try {
             const res = await fetch(`/api/reddit/stories?subreddit=${encodeURIComponent(sub)}`);
             const data = await res.json();
-            renderStoryCards(redditCards, data.stories);
+            if (data.status === "success" && data.stories.length > 0) {
+                container.innerHTML = data.stories.slice(0, 5).map(s => `
+                    <div class="story-card" data-title="${encodeURIComponent(s.title)}" data-story="${encodeURIComponent(s.story)}">
+                        <div class="story-card-title">${s.title}</div>
+                        <div class="story-card-snippet">${s.story.substring(0, 140)}...</div>
+                        <div class="meta-tag">🔺 ${s.upvotes.toLocaleString()} upvotes • u/${s.author}</div>
+                    </div>
+                `).join("");
+
+                container.querySelectorAll(".story-card").forEach(card => {
+                    card.addEventListener("click", () => {
+                        storyTitleInput.value = decodeURIComponent(card.dataset.title);
+                        storyTextInput.value = decodeURIComponent(card.dataset.story);
+                        updateWordCount();
+                    });
+                });
+            } else {
+                container.innerHTML = "<p class='empty-text'>No stories found in subreddit.</p>";
+            }
         } catch (e) {
-            redditCards.innerHTML = `<div class="empty-text">Failed to fetch stories: ${e}</div>`;
+            container.innerHTML = `<p class='empty-text'>Error fetching Reddit: ${e}</p>`;
         }
     }
 
-    btnFetchReddit.addEventListener("click", fetchRedditStories);
+    document.getElementById("btn-fetch-reddit").addEventListener("click", fetchRedditStories);
 
-    btnScrapeRedditUrl.addEventListener("click", async () => {
-        const url = redditUrlInput.value.trim();
+    document.getElementById("btn-scrape-reddit-url").addEventListener("click", async () => {
+        const url = document.getElementById("reddit-url-input").value.trim();
         if (!url) return alert("Please enter a Reddit post URL");
-        btnScrapeRedditUrl.innerText = "Scraping...";
         try {
-            const res = await fetch("/api/reddit/url", {
+            const res = await fetch("/api/reddit/scrape-url", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ url })
             });
             const data = await res.json();
-            if (data.post) {
-                setStory(data.post.title, data.post.story);
-                alert("Reddit story loaded into editor!");
+            if (data.status === "success") {
+                storyTitleInput.value = data.story.title;
+                storyTextInput.value = data.story.story;
+                updateWordCount();
+            } else {
+                alert("Failed to scrape post: " + data.detail);
             }
         } catch (e) {
-            alert("Could not scrape URL. Try another or paste text directly.");
-        } finally {
-            btnScrapeRedditUrl.innerText = "Scrape URL";
+            alert("Scrape error: " + e);
         }
     });
 
-    // 2. QUORA ACTIONS
-    const quoraSearchInput = document.getElementById("quora-search-input");
-    const btnFetchQuora = document.getElementById("btn-fetch-quora");
-    const quoraCards = document.getElementById("quora-cards");
-    const quoraUrlInput = document.getElementById("quora-url-input");
-    const btnScrapeQuoraUrl = document.getElementById("btn-scrape-quora-url");
+    // 2. QUORA SCRAPER
+    document.getElementById("btn-fetch-quora").addEventListener("click", async () => {
+        const query = document.getElementById("quora-search-input").value.trim() || "viral secrets";
+        const container = document.getElementById("quora-cards");
+        container.innerHTML = "<p class='empty-text'>Searching Quora answers...</p>";
 
-    async function fetchQuoraStories() {
-        const q = quoraSearchInput.value.trim() || "viral secrets";
-        quoraCards.innerHTML = `<div class="empty-text">Searching Quora...</div>`;
         try {
-            const res = await fetch(`/api/quora/stories?query=${encodeURIComponent(q)}`);
+            const res = await fetch(`/api/quora/stories?query=${encodeURIComponent(query)}`);
             const data = await res.json();
-            renderStoryCards(quoraCards, data.stories, true);
+            if (data.status === "success" && data.stories.length > 0) {
+                container.innerHTML = data.stories.slice(0, 4).map(s => `
+                    <div class="story-card" data-title="${encodeURIComponent(s.question)}" data-story="${encodeURIComponent(s.story)}">
+                        <div class="story-card-title">${s.question}</div>
+                        <div class="story-card-snippet">${s.story.substring(0, 140)}...</div>
+                        <div class="meta-tag">💡 Topic: ${s.topic || 'Insight'}</div>
+                    </div>
+                `).join("");
+
+                container.querySelectorAll(".story-card").forEach(card => {
+                    card.addEventListener("click", () => {
+                        storyTitleInput.value = decodeURIComponent(card.dataset.title);
+                        storyTextInput.value = decodeURIComponent(card.dataset.story);
+                        updateWordCount();
+                    });
+                });
+            } else {
+                container.innerHTML = "<p class='empty-text'>No Quora answers found.</p>";
+            }
         } catch (e) {
-            quoraCards.innerHTML = `<div class="empty-text">Failed to fetch: ${e}</div>`;
+            container.innerHTML = `<p class='empty-text'>Error searching Quora: ${e}</p>`;
         }
-    }
+    });
 
-    btnFetchQuora.addEventListener("click", fetchQuoraStories);
-
-    btnScrapeQuoraUrl.addEventListener("click", async () => {
-        const url = quoraUrlInput.value.trim();
+    document.getElementById("btn-scrape-quora-url").addEventListener("click", async () => {
+        const url = document.getElementById("quora-url-input").value.trim();
         if (!url) return alert("Please enter a Quora question/answer URL");
-        btnScrapeQuoraUrl.innerText = "Scraping...";
         try {
-            const res = await fetch("/api/quora/url", {
+            const res = await fetch("/api/quora/scrape-url", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ url })
             });
             const data = await res.json();
-            if (data.post) {
-                setStory(data.post.question, data.post.story);
-                alert("Quora story loaded into editor!");
+            if (data.status === "success") {
+                storyTitleInput.value = data.story.question;
+                storyTextInput.value = data.story.story;
+                updateWordCount();
+            } else {
+                alert("Failed to scrape Quora: " + data.detail);
             }
         } catch (e) {
-            alert("Could not scrape Quora URL. Paste text directly.");
-        } finally {
-            btnScrapeQuoraUrl.innerText = "Scrape URL";
+            alert("Scrape error: " + e);
         }
     });
 
-    // 3. YOUTUBE ACTIONS
-    const ytUrlInput = document.getElementById("youtube-url-input");
-    const btnFetchYoutube = document.getElementById("btn-fetch-youtube");
-    const ytPreviewCard = document.getElementById("youtube-preview-card");
-    const ytTitle = document.getElementById("yt-title");
-    const ytChannel = document.getElementById("yt-channel");
-
-    btnFetchYoutube.addEventListener("click", async () => {
-        const url = ytUrlInput.value.trim();
+    // 3. YOUTUBE TRANSCRIPT
+    document.getElementById("btn-fetch-youtube").addEventListener("click", async () => {
+        const url = document.getElementById("youtube-url-input").value.trim();
         if (!url) return alert("Please enter a YouTube video URL");
-        btnFetchYoutube.innerText = "Extracting...";
+
+        const btn = document.getElementById("btn-fetch-youtube");
+        btn.innerText = "⏳ Extracting...";
+        btn.disabled = true;
+
         try {
-            const res = await fetch("/api/youtube/transcript", {
+            const res = await fetch("/api/youtube/scrape", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ url })
             });
             const data = await res.json();
-            if (data.video) {
-                ytTitle.innerText = data.video.title;
-                ytChannel.innerText = `Channel: ${data.video.channel} • Cleaned Transcript Ready`;
-                ytPreviewCard.style.display = "block";
-                setStory(data.video.title, data.video.story);
-                alert("YouTube transcript extracted and formatted into viral script!");
+            if (data.status === "success") {
+                const yt = data.data;
+                document.getElementById("yt-title").innerText = yt.title;
+                document.getElementById("yt-channel").innerText = `Channel: ${yt.channel}`;
+                document.getElementById("youtube-preview-card").style.display = "block";
+
+                storyTitleInput.value = yt.title;
+                storyTextInput.value = yt.story;
+                updateWordCount();
+            } else {
+                alert("Failed to extract YouTube transcript: " + data.detail);
             }
         } catch (e) {
-            alert("Could not extract transcript. Ensure video has English captions available.");
+            alert("YouTube extraction error: " + e);
         } finally {
-            btnFetchYoutube.innerText = "Extract Transcript";
+            btn.innerText = "Extract Transcript";
+            btn.disabled = false;
         }
     });
 
-    // 4. AI STORY GENERATOR
-    const aiCategorySelect = document.getElementById("ai-category-select");
-    const aiDurationSelect = document.getElementById("ai-duration-select");
-    const aiPromptInput = document.getElementById("ai-prompt-input");
-    const geminiKeyInput = document.getElementById("gemini-key-input");
-    const btnGenerateAi = document.getElementById("btn-generate-ai");
+    // 4. AI STORY WRITER
+    document.getElementById("btn-generate-ai").addEventListener("click", async () => {
+        const category = document.getElementById("ai-category-select").value;
+        const duration = parseInt(document.getElementById("ai-duration-select").value, 10);
+        const prompt = document.getElementById("ai-prompt-input").value.trim();
+        const apiKey = document.getElementById("gemini-key-input").value.trim();
 
-    btnGenerateAi.addEventListener("click", async () => {
-        btnGenerateAi.innerText = "Generating Viral Script...";
-        btnGenerateAi.disabled = true;
+        const btn = document.getElementById("btn-generate-ai");
+        btn.innerText = "✨ Generating Viral Script...";
+        btn.disabled = true;
 
         try {
-            const res = await fetch("/api/ai/generate", {
+            const res = await fetch("/api/ai/generate-story", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    category: aiCategorySelect.value,
-                    prompt: aiPromptInput.value.trim(),
-                    duration: parseInt(aiDurationSelect.value),
-                    api_key: geminiKeyInput.value.trim() || null
+                    category,
+                    prompt,
+                    duration,
+                    api_key: apiKey || null
                 })
             });
             const data = await res.json();
-            if (data.result) {
-                setStory(data.result.title, data.result.story);
+            if (data.status === "success") {
+                storyTitleInput.value = data.result.title;
+                storyTextInput.value = data.result.story;
+                updateWordCount();
+            } else {
+                alert("AI Generation error: " + data.detail);
             }
         } catch (e) {
-            alert("Error generating story: " + e);
+            alert("AI Writer error: " + e);
         } finally {
-            btnGenerateAi.innerText = "✨ Generate Viral Script with AI";
-            btnGenerateAi.disabled = false;
+            btn.innerText = "✨ Generate Full Viral Script with AI";
+            btn.disabled = false;
         }
     });
 
-    // Helper: Render Story Cards
-    function renderStoryCards(container, list, isQuora = false) {
-        if (!list || list.length === 0) {
-            container.innerHTML = `<div class="empty-text">No stories found. Try a different topic or paste link.</div>`;
-            return;
-        }
-        container.innerHTML = list.map((item, idx) => {
-            const title = isQuora ? item.question : item.title;
-            const meta = isQuora 
-                ? `Topic: ${item.topic} • Author: ${item.author} • 👍 ${item.upvotes.toLocaleString()}`
-                : `r/${item.subreddit} • u/${item.author} • 🔺 ${item.upvotes.toLocaleString()}`;
-            return `
-                <div class="story-card" data-idx="${idx}">
-                    <div class="card-title">${title}</div>
-                    <div class="card-snippet">${item.story}</div>
-                    <div class="card-meta">${meta}</div>
-                </div>
-            `;
-        }).join("");
-
-        container.querySelectorAll(".story-card").forEach((card, idx) => {
-            card.addEventListener("click", () => {
-                container.querySelectorAll(".story-card").forEach(c => c.classList.remove("selected"));
-                card.classList.add("selected");
-                const item = list[idx];
-                setStory(isQuora ? item.question : item.title, item.story);
-            });
-        });
-    }
-
-    // Voice Preview
+    // TTS AUDIO PREVIEW
     const btnPreviewAudio = document.getElementById("btn-preview-audio");
     const audioPreviewPlayer = document.getElementById("audio-preview-player");
-    const previewIndicator = document.getElementById("preview-voice-indicator");
+    const previewVoiceIndicator = document.getElementById("preview-voice-indicator");
 
     btnPreviewAudio.addEventListener("click", async () => {
-        const text = storyTextInput.value.trim() || storyTitleInput.value.trim() || "Welcome to viral TikTok stories.";
-        btnPreviewAudio.innerText = "Generating sample...";
+        const text = storyTextInput.value.trim() || storyTitleInput.value.trim() || "Welcome to StoryTeller Pro. Creating viral videos in seconds.";
+        btnPreviewAudio.disabled = true;
+        btnPreviewAudio.innerText = "⏳ Generating...";
+
         try {
             const res = await fetch("/api/tts/preview", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    text: text,
+                    text,
                     voice: voiceSelect.value,
-                    rate: rateSelect.value
+                    rate: rateSelect.value,
+                    pitch: "+0Hz"
                 })
             });
             const data = await res.json();
@@ -355,38 +432,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 audioPreviewPlayer.src = `${data.audio_url}?t=${Date.now()}`;
                 audioPreviewPlayer.style.display = "block";
                 audioPreviewPlayer.play();
-                if (previewIndicator) {
-                    previewIndicator.innerText = `Used: ${data.voice_used} (${data.rate_used})`;
-                }
+                previewVoiceIndicator.innerText = `Sample: ${data.voice_used} (${data.rate_used})`;
+            } else {
+                alert("Preview error: " + data.detail);
             }
         } catch (e) {
-            alert("Voice preview failed: " + e);
+            alert("Audio test error: " + e);
         } finally {
+            btnPreviewAudio.disabled = false;
             btnPreviewAudio.innerText = "🔊 Test Voice Sample";
-        }
-    });
-
-    // Custom Background Upload
-    const uploadBgInput = document.getElementById("upload-bg-input");
-    uploadBgInput.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const res = await fetch("/api/backgrounds/upload", {
-                method: "POST",
-                body: formData
-            });
-            const data = await res.json();
-            if (data.status === "success") {
-                alert(`Uploaded ${data.filename}! Reloading backgrounds...`);
-                loadPresets();
-            }
-        } catch (err) {
-            alert("Upload failed: " + err);
         }
     });
 
@@ -403,35 +457,45 @@ document.addEventListener("DOMContentLoaded", () => {
         btnGenerateVideo.innerText = "⏳ AI GENERATING VIDEO...";
         renderProgressBox.style.display = "block";
         renderProgressFill.style.width = "10%";
-        renderStatusText.innerText = "AI analyzing story & matching optimal voice...";
+        renderStatusText.innerText = "Analyzing story & synthesizing full voiceover...";
         renderPctText.innerText = "10%";
 
         try {
             let fakePct = 15;
             const progressInterval = setInterval(() => {
                 if (fakePct < 85) {
-                    fakePct += Math.floor(Math.random() * 7) + 3;
+                    fakePct += Math.floor(Math.random() * 6) + 3;
                     if (fakePct > 85) fakePct = 85;
                     renderProgressFill.style.width = `${fakePct}%`;
                     renderPctText.innerText = `${fakePct}%`;
-                    if (fakePct > 65) renderStatusText.innerText = "Burning karaoke captions with FFmpeg...";
-                    else if (fakePct > 40) renderStatusText.innerText = "Scrubbing/Composing 9:16 vertical b-roll footage...";
+                    if (fakePct > 65) renderStatusText.innerText = "Burning karaoke captions & audio mixing with FFmpeg...";
+                    else if (fakePct > 40) renderStatusText.innerText = "Composing 9:16 vertical background footage...";
                     else if (fakePct > 20) renderStatusText.innerText = "Synthesizing voiceover with Edge-TTS...";
                 }
             }, 1200);
 
+            const payload = {
+                title: title || "Viral TikTok Story",
+                story: story,
+                voice: voiceSelect.value,
+                rate: rateSelect.value,
+                subtitle_style: subStyleSelect.value,
+                highlight_color: colorSelect.value,
+                font_name: fontSelect.value,
+                font_size: parseInt(fontSizeSelect.value, 10),
+                margin_v: parseInt(marginVSelect.value, 10),
+                text_case: caseSelect.value,
+                background_id: bgSelect.value || "auto",
+                bg_music_id: bgMusicSelect.value === "custom" ? null : bgMusicSelect.value,
+                bg_music_volume: parseFloat(bgmVolSlider.value) / 100.0,
+                voice_volume: parseFloat(voiceVolSlider.value) / 100.0,
+                custom_bg_music_filename: customBgmFilename
+            };
+
             const res = await fetch("/api/video/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title || "Viral TikTok Story",
-                    story: story,
-                    voice: voiceSelect.value,
-                    rate: rateSelect.value,
-                    subtitle_style: subStyleSelect.value,
-                    highlight_color: colorSelect.value,
-                    background_id: bgSelect.value || "auto"
-                })
+                body: JSON.stringify(payload)
             });
 
             clearInterval(progressInterval);
@@ -478,23 +542,40 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 2000);
     });
 
-    // Gallery
+    // Video Gallery Library
     async function loadGallery() {
         try {
             const res = await fetch("/api/gallery");
             const data = await res.json();
             if (data.videos && data.videos.length > 0) {
-                galleryGrid.innerHTML = data.videos.map(v => `
-                    <div class="gallery-item" data-url="${v.url}">
-                        <span>▶️</span>
-                        <span class="gallery-item-name">${v.filename}</span>
-                        <span class="gallery-item-size">${v.size_mb} MB</span>
-                    </div>
-                `).join("");
+                galleryGrid.innerHTML = data.videos.map(v => {
+                    const thumb = v.thumbnail_url 
+                        ? `<img src="${v.thumbnail_url}" alt="thumb">` 
+                        : `<span style="font-size: 16px;">▶️</span>`;
+                    const d = new Date(v.created_at * 1000);
+                    const dateStr = d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    return `
+                        <div class="gallery-card" data-url="${v.url}" data-filename="${v.filename}">
+                            <div class="gallery-info">
+                                <div class="gallery-thumb-box">${thumb}</div>
+                                <div class="gallery-meta">
+                                    <div class="gallery-name" title="${v.filename}">${v.filename}</div>
+                                    <div class="gallery-sub">${v.size_mb} MB • ${dateStr}</div>
+                                </div>
+                            </div>
+                            <div class="gallery-actions">
+                                <a href="${v.url}" download="${v.filename}" class="btn-icon" title="Download MP4" onclick="event.stopPropagation();">⬇️</a>
+                                <button class="btn-del" title="Delete Video" data-del="${v.filename}" onclick="event.stopPropagation();">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
 
-                galleryGrid.querySelectorAll(".gallery-item").forEach(item => {
-                    item.addEventListener("click", () => {
-                        const url = item.dataset.url;
+                // Click to play
+                galleryGrid.querySelectorAll(".gallery-card").forEach(card => {
+                    card.addEventListener("click", () => {
+                        const url = card.dataset.url;
                         phonePlayer.src = `${url}?t=${Date.now()}`;
                         phonePlayer.style.display = "block";
                         playerPlaceholder.style.display = "none";
@@ -502,6 +583,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         exportCard.style.display = "block";
                         btnDownloadMp4.href = url;
+                        btnDownloadMp4.setAttribute("download", card.dataset.filename);
+                    });
+                });
+
+                // Delete handlers
+                galleryGrid.querySelectorAll(".btn-del").forEach(btn => {
+                    btn.addEventListener("click", async () => {
+                        const fn = btn.dataset.del;
+                        if (!confirm(`Delete ${fn} permanently from PC?`)) return;
+                        try {
+                            const delRes = await fetch(`/api/gallery/${fn}`, { method: "DELETE" });
+                            const delData = await delRes.json();
+                            if (delData.status === "success") {
+                                loadGallery();
+                            }
+                        } catch (e) {
+                            alert("Failed to delete video: " + e);
+                        }
                     });
                 });
             } else {
