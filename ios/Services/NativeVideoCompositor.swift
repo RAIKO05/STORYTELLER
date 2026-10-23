@@ -513,35 +513,6 @@ public class NativeVideoCompositor {
         if FileManager.default.fileExists(atPath: docs.path) { return docs }
         return nil
     }
-        textLayer.shadowOpacity = 1.0
-        textLayer.shadowRadius = 10
-        textLayer.shadowOffset = CGSize(width: 0, height: 4)
-
-        container.addSublayer(textLayer)
-
-        let duration = max(endTime - startTime, 0.25)
-
-        let opacityAnim = CAKeyframeAnimation(keyPath: "opacity")
-        opacityAnim.values = [0.0, 1.0, 1.0, 0.0]
-        opacityAnim.keyTimes = [0.0, 0.02, 0.98, 1.0]
-        opacityAnim.duration = duration
-        opacityAnim.beginTime = AVCoreAnimationBeginTimeAtZero + startTime
-        opacityAnim.fillMode = .both
-        opacityAnim.isRemovedOnCompletion = false
-
-        let scaleAnim = CAKeyframeAnimation(keyPath: "transform.scale")
-        scaleAnim.values = [0.75, 1.22, 1.0]
-        scaleAnim.keyTimes = [0.0, 0.35, 1.0]
-        scaleAnim.duration = min(duration, 0.22)
-        scaleAnim.beginTime = AVCoreAnimationBeginTimeAtZero + startTime
-        scaleAnim.fillMode = .both
-        scaleAnim.isRemovedOnCompletion = false
-
-        container.add(opacityAnim, forKey: "opacity")
-        container.add(scaleAnim, forKey: "scale")
-
-        return container
-    }
 
     private func parseColor(hex: String) -> UIColor {
         if hex.contains("&H00FFFF&") || hex.lowercased().contains("yellow") {
