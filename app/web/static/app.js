@@ -220,6 +220,163 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // 0. CURATED VIRAL SCRIPTS (1-Tap Fast Loading - Matching iPhone Default)
+    const curatedStories = {
+        garlic: {
+            title: "AITA for revealing my sister's fake allergy at her own wedding dinner?",
+            story: "My sister claimed to be severely allergic to garlic for three years until I caught her eating garlic bread at an Italian restaurant. Yesterday at her wedding reception, she started screaming at the coordinator over garlic potatoes. I took the microphone, congratulated the bride, and played the video of her eating garlic bread. Half the family walked out. Am I the jerk?"
+        },
+        monitor: {
+            title: "I bought a vintage baby monitor, but it's picking up a room that doesn't exist.",
+            story: "Three weeks ago I set up a vintage audio baby monitor in my daughter's nursery. At 3:14 AM on Thursday, the speaker clicked on with static, followed by a rocking chair slowly creaking on wooden floorboards. My daughter's room has carpet. When I ran in, she was asleep, but the receiver whispered: 'Hush now, he's looking through the door.' The monitor had no batteries inside."
+        },
+        script: {
+            title: "My boss stole my bonus, so I accidentally automated his entire job in Python.",
+            story: "My corporate manager took our entire departmental bonus pool and assigned it to himself under 'executive optimization.' I didn't get mad. I opened Python. Over three weeks, I built five scripts that handled every single task he was responsible for: invoice approval, vendor reordering, and weekly charts. During the executive board meeting, the VP asked why the company was paying him two hundred thousand a year when a ten-line script did his job in eight seconds. He was fired before lunch."
+        },
+        parking: {
+            title: "My neighbor kept parking his truck across three spaces, so I called the city.",
+            story: "An entitled guy parked his lifted pickup truck diagonally across three assigned spaces for six months. When polite notes were left, he wrote back: 'Call a tow truck if you're broke.' I found a city fire-code ordinance that bans modified bumpers from blocking sprinkler access points in subterranean garages. I submitted timestamped photos. Two days later, three city code officers seized his truck and issued twelve thousand dollars in retroactive penalties. He now rides a lime scooter."
+        },
+        heist: {
+            title: "The genius heist of the Antwerp Diamond Center where fifty million was stolen without an alarm.",
+            story: "In February 2003, Italian masterminds pulled off the most impossible heist in modern history. The Antwerp Diamond Vault was protected by Doppler radar, seismic sensors, an infrared heat curtain, and magnetic triggers. On the night of the heist, the team bypassed the infrared sensors using ordinary women's hairspray to coat the thermal mirrors. They walked out with fifty million dollars in uncut diamonds and not a single diamond has ever been found."
+        }
+    };
+
+    function selectCuratedStory(key) {
+        const item = curatedStories[key];
+        if (!item) return;
+        storyTitleInput.value = item.title;
+        storyTextInput.value = item.story;
+        updateWordCount();
+
+        document.querySelectorAll(".curated-card").forEach(c => {
+            if (c.dataset.key === key) {
+                c.classList.add("active");
+                c.style.borderColor = "var(--accent)";
+            } else {
+                c.classList.remove("active");
+                c.style.borderColor = "var(--border)";
+            }
+        });
+    }
+
+    document.querySelectorAll(".curated-card").forEach(card => {
+        card.addEventListener("click", () => {
+            selectCuratedStory(card.dataset.key);
+        });
+    });
+
+    // LUXURY THEME ENGINE (Matches iOS AppTheme.swift: obsidian, emerald, midnight, oled, sand)
+    const themeNames = {
+        obsidian: "Bayan Obsidian",
+        emerald: "Moroccan Emerald",
+        midnight: "Sapphire Midnight",
+        oled: "Pure OLED Black",
+        sand: "Imperial Sand"
+    };
+
+    const currentThemeLabel = document.getElementById("current-theme-label");
+    const themeModal = document.getElementById("theme-modal");
+    const btnOpenThemeModal = document.getElementById("btn-open-theme-modal");
+    const btnCloseThemeModal = document.getElementById("btn-close-theme-modal");
+
+    function applyTheme(themeKey) {
+        if (!themeNames[themeKey]) themeKey = "obsidian";
+        document.body.className = `theme-${themeKey}`;
+        if (currentThemeLabel) {
+            currentThemeLabel.innerText = themeNames[themeKey];
+        }
+        localStorage.setItem("storyteller_theme", themeKey);
+
+        document.querySelectorAll(".theme-tile").forEach(t => {
+            if (t.dataset.theme === themeKey) {
+                t.classList.add("active");
+            } else {
+                t.classList.remove("active");
+            }
+        });
+    }
+
+    if (btnOpenThemeModal && themeModal) {
+        btnOpenThemeModal.addEventListener("click", () => {
+            themeModal.classList.add("open");
+        });
+    }
+
+    if (btnCloseThemeModal && themeModal) {
+        btnCloseThemeModal.addEventListener("click", () => {
+            themeModal.classList.remove("open");
+        });
+    }
+
+    document.querySelectorAll(".theme-tile").forEach(tile => {
+        tile.addEventListener("click", () => {
+            const chosen = tile.dataset.theme;
+            applyTheme(chosen);
+            themeModal.classList.remove("open");
+        });
+    });
+
+    // IPHONE CONNECT MODAL
+    const connectModal = document.getElementById("connect-modal");
+    const btnOpenConnectModal = document.getElementById("btn-open-connect-modal");
+    const btnCloseConnectModal = document.getElementById("btn-close-connect-modal");
+    const connectIpDisplay = document.getElementById("connect-ip-display");
+
+    async function updateNetworkInfo() {
+        try {
+            const res = await fetch("/api/network-info");
+            const data = await res.json();
+            if (data.iphone_url && connectIpDisplay) {
+                connectIpDisplay.innerText = data.iphone_url;
+            }
+        } catch (e) {
+            console.error("Network info error:", e);
+        }
+    }
+
+    if (btnOpenConnectModal && connectModal) {
+        btnOpenConnectModal.addEventListener("click", () => {
+            updateNetworkInfo();
+            connectModal.classList.add("open");
+        });
+    }
+
+    if (btnCloseConnectModal && connectModal) {
+        btnCloseConnectModal.addEventListener("click", () => {
+            connectModal.classList.remove("open");
+        });
+    }
+
+    if (connectIpDisplay) {
+        connectIpDisplay.style.cursor = "pointer";
+        connectIpDisplay.title = "Click to copy URL";
+        connectIpDisplay.addEventListener("click", () => {
+            const text = connectIpDisplay.innerText.trim();
+            navigator.clipboard.writeText(text);
+            const original = connectIpDisplay.innerText;
+            connectIpDisplay.innerText = "✅ Copied to Clipboard!";
+            setTimeout(() => {
+                connectIpDisplay.innerText = original;
+            }, 1800);
+        });
+    }
+
+    // Global modal close on backdrop click or ESC
+    window.addEventListener("click", (e) => {
+        if (e.target === themeModal) themeModal.classList.remove("open");
+        if (e.target === connectModal) connectModal.classList.remove("open");
+    });
+
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if (themeModal) themeModal.classList.remove("open");
+            if (connectModal) connectModal.classList.remove("open");
+        }
+    });
+
     // 1. REDDIT SCRAPER
     async function fetchRedditStories() {
         const sub = document.getElementById("reddit-subreddit-select").value;
@@ -614,6 +771,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-refresh-gallery").addEventListener("click", loadGallery);
 
     // Initial triggers
+    const savedTheme = localStorage.getItem("storyteller_theme") || "obsidian";
+    applyTheme(savedTheme);
+    selectCuratedStory("garlic");
+
     loadPresets();
     fetchRedditStories();
 });

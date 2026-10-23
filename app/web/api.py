@@ -15,6 +15,7 @@ from app.config import (
     AUDIO_DIR,
     CACHE_DIR
 )
+from app.utils.helpers import get_local_ip
 from app.scrapers.reddit import RedditScraper
 from app.scrapers.quora import QuoraScraper
 from app.scrapers.youtube import YouTubeScraper
@@ -43,6 +44,16 @@ app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")
 @app.get("/")
 def read_root():
     return FileResponse(Path(__file__).parent / "static" / "index.html")
+
+@app.get("/api/network-info")
+def get_network_info():
+    ip = get_local_ip()
+    return {
+        "status": "success",
+        "local_ip": ip,
+        "port": 8000,
+        "iphone_url": f"http://{ip}:8000"
+    }
 
 @app.get("/api/presets")
 def get_presets():

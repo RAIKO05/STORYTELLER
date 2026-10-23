@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-obsidian">
     <div class="app-container">
         <!-- Top Navigation Bar -->
         <header class="navbar">
@@ -20,9 +20,15 @@
                 </div>
             </div>
             <div class="nav-badges">
-                <span class="badge badge-gold"><span class="dot"></span> 🎬 Cinematic Studio v2.3</span>
-                <span class="badge badge-gold"><span class="dot"></span> 🤖 AI Persona & Tone Matching</span>
-                <span class="badge badge-success"><span class="dot"></span> 9:16 Vertical 1080p</span>
+                <!-- Theme Switcher Pill -->
+                <button id="btn-open-theme-modal" class="badge badge-gold" title="Switch Theme">
+                    <span>🎨</span> <span id="current-theme-label">Bayan Obsidian</span>
+                </button>
+                <!-- iPhone Connect Pill -->
+                <button id="btn-open-connect-modal" class="badge badge-connect" title="Connect iPhone">
+                    <span>📲</span> Connect iPhone
+                </button>
+                <span class="badge badge-gold"><span class="dot"></span> 9:16 Vertical 1080p</span>
             </div>
         </header>
 
@@ -36,14 +42,20 @@
                         <span class="step-num">1</span>
                         <div>
                             <h2>Choose Story Source</h2>
-                            <p>Scrape from Reddit, Quora, YouTube transcripts, or write with AI</p>
+                            <p>Pick a curated viral script, scrape from Reddit/Quora/YouTube, or generate with AI</p>
                         </div>
                     </div>
 
-                    <!-- Source Selector Tabs -->
+                    <!-- Source Selector Tabs (Matches iPhone 1:1) -->
                     <div class="source-tabs">
-                        <button class="tab-btn active" data-tab="reddit">
-                            <span>🔥</span> Reddit
+                        <button class="tab-btn active" data-tab="curated">
+                            <span>🔥</span> Curated 🔥
+                        </button>
+                        <button class="tab-btn" data-tab="reddit">
+                            <span>💬</span> Reddit
+                        </button>
+                        <button class="tab-btn" data-tab="ai">
+                            <span>✨</span> AI Writer
                         </button>
                         <button class="tab-btn" data-tab="quora">
                             <span>💡</span> Quora
@@ -51,16 +63,47 @@
                         <button class="tab-btn" data-tab="youtube">
                             <span>▶️</span> YouTube
                         </button>
-                        <button class="tab-btn" data-tab="ai">
-                            <span>✨</span> AI Writer
-                        </button>
                         <button class="tab-btn" data-tab="manual">
                             <span>✍️</span> Custom
                         </button>
                     </div>
 
+                    <!-- TAB 0: CURATED 🔥 (DEFAULT ON IPHONE & PC) -->
+                    <div class="tab-pane active" id="tab-curated">
+                        <p style="font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            🔥 Top High-Retention Scripts (1-Tap Load)
+                        </p>
+                        <div class="curated-grid">
+                            <div class="curated-card" data-key="garlic">
+                                <span class="curated-tag">AITA / Drama</span>
+                                <h4 class="curated-title">Wedding Garlic Bread</h4>
+                                <p class="curated-desc">My sister claimed to be severely allergic to garlic until I caught her eating garlic bread...</p>
+                            </div>
+                            <div class="curated-card" data-key="monitor">
+                                <span class="curated-tag">Suspense / Mystery</span>
+                                <h4 class="curated-title">Vintage Baby Monitor</h4>
+                                <p class="curated-desc">I bought a vintage baby monitor, but it's picking up a room that doesn't exist...</p>
+                            </div>
+                            <div class="curated-card" data-key="script">
+                                <span class="curated-tag">Revenge / Work</span>
+                                <h4 class="curated-title">Automated Boss Job</h4>
+                                <p class="curated-desc">My boss stole my bonus, so I accidentally automated his entire job in Python...</p>
+                            </div>
+                            <div class="curated-card" data-key="parking">
+                                <span class="curated-tag">Compliance / Karma</span>
+                                <h4 class="curated-title">Entitled Neighbor Tow</h4>
+                                <p class="curated-desc">My neighbor kept parking his truck across three spaces, so I called the city fire code...</p>
+                            </div>
+                            <div class="curated-card" data-key="heist">
+                                <span class="curated-tag">Crime / True Story</span>
+                                <h4 class="curated-title">Antwerp Diamond Heist</h4>
+                                <p class="curated-desc">The genius $50 million diamond center heist pulled off using ordinary women's hairspray...</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- TAB 1: REDDIT -->
-                    <div class="tab-pane active" id="tab-reddit">
+                    <div class="tab-pane" id="tab-reddit">
                         <div class="form-row">
                             <div class="form-group flex-2">
                                 <label>Subreddit</label>
@@ -90,36 +133,7 @@
                         <div id="reddit-cards" class="story-cards-list"></div>
                     </div>
 
-                    <!-- TAB 2: QUORA -->
-                    <div class="tab-pane" id="tab-quora">
-                        <div class="form-row">
-                            <input type="text" id="quora-search-input" class="form-control" placeholder="Search Quora topic (e.g. flight secrets, undercover, lottery)...">
-                            <button id="btn-fetch-quora" class="btn btn-secondary">Search</button>
-                        </div>
-                        <div class="or-divider"><span>OR PASTE QUORA LINK</span></div>
-                        <div class="form-row">
-                            <input type="text" id="quora-url-input" class="form-control" placeholder="https://www.quora.com/What-are-the-darkest-secrets...">
-                            <button id="btn-scrape-quora-url" class="btn btn-dark">Scrape URL</button>
-                        </div>
-                        <div id="quora-cards" class="story-cards-list"></div>
-                    </div>
-
-                    <!-- TAB 3: YOUTUBE -->
-                    <div class="tab-pane" id="tab-youtube">
-                        <label>YouTube Video URL (Extracts narrative transcript without truncation)</label>
-                        <div class="form-row">
-                            <input type="text" id="youtube-url-input" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
-                            <button id="btn-fetch-youtube" class="btn btn-primary">Extract Transcript</button>
-                        </div>
-                        <div id="youtube-preview-card" class="story-card yt-preview-box" style="display: none;">
-                            <div class="yt-info">
-                                <h4 id="yt-title">Video Title</h4>
-                                <p id="yt-channel" class="meta-tag">Channel Name</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TAB 4: AI WRITER -->
+                    <!-- TAB 2: AI WRITER -->
                     <div class="tab-pane" id="tab-ai">
                         <div class="form-row">
                             <div class="form-group flex-1">
@@ -152,6 +166,35 @@
                         <button id="btn-generate-ai" class="btn btn-primary w-100">
                             ✨ Generate Full Viral Script with AI
                         </button>
+                    </div>
+
+                    <!-- TAB 3: QUORA -->
+                    <div class="tab-pane" id="tab-quora">
+                        <div class="form-row">
+                            <input type="text" id="quora-search-input" class="form-control" placeholder="Search Quora topic (e.g. flight secrets, undercover, lottery)...">
+                            <button id="btn-fetch-quora" class="btn btn-secondary">Search</button>
+                        </div>
+                        <div class="or-divider"><span>OR PASTE QUORA LINK</span></div>
+                        <div class="form-row">
+                            <input type="text" id="quora-url-input" class="form-control" placeholder="https://www.quora.com/What-are-the-darkest-secrets...">
+                            <button id="btn-scrape-quora-url" class="btn btn-dark">Scrape URL</button>
+                        </div>
+                        <div id="quora-cards" class="story-cards-list"></div>
+                    </div>
+
+                    <!-- TAB 4: YOUTUBE -->
+                    <div class="tab-pane" id="tab-youtube">
+                        <label>YouTube Video URL (Extracts narrative transcript without truncation)</label>
+                        <div class="form-row">
+                            <input type="text" id="youtube-url-input" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                            <button id="btn-fetch-youtube" class="btn btn-primary">Extract Transcript</button>
+                        </div>
+                        <div id="youtube-preview-card" class="story-card yt-preview-box" style="display: none;">
+                            <div class="yt-info">
+                                <h4 id="yt-title">Video Title</h4>
+                                <p id="yt-channel" class="meta-tag">Channel Name</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- TAB 5: CUSTOM / MANUAL -->
@@ -428,6 +471,77 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- THEME PICKER MODAL (5 BAYAN THEMES MATCHING IPHONE) -->
+    <div id="theme-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🎨 Select Luxury App Theme</h3>
+                <button id="btn-close-theme-modal" class="modal-close">✕</button>
+            </div>
+            <div class="theme-tiles-grid">
+                <div class="theme-tile active" data-theme="obsidian">
+                    <div class="theme-preview-orb" style="background: radial-gradient(circle, #DFB15B 0%, #0A0D14 100%);"></div>
+                    <div class="theme-tile-info">
+                        <h5>Bayan Obsidian (Default)</h5>
+                        <p>Deep Obsidian Dark & Radiant Imperial Gold</p>
+                    </div>
+                </div>
+                <div class="theme-tile" data-theme="emerald">
+                    <div class="theme-preview-orb" style="background: radial-gradient(circle, #40E699 0%, #021610 100%);"></div>
+                    <div class="theme-tile-info">
+                        <h5>Moroccan Emerald</h5>
+                        <p>Deep Forest Emerald & Gold Silk</p>
+                    </div>
+                </div>
+                <div class="theme-tile" data-theme="midnight">
+                    <div class="theme-preview-orb" style="background: radial-gradient(circle, #33D1E0 0%, #04091A 100%);"></div>
+                    <div class="theme-tile-info">
+                        <h5>Sapphire Midnight</h5>
+                        <p>Royal Starlight Navy & Electric Cyan</p>
+                    </div>
+                </div>
+                <div class="theme-tile" data-theme="oled">
+                    <div class="theme-preview-orb" style="background: radial-gradient(circle, #F5E0A6 0%, #000000 100%);"></div>
+                    <div class="theme-tile-info">
+                        <h5>Pure OLED Black</h5>
+                        <p>Zero-Emissive True Black & Champagne Gold</p>
+                    </div>
+                </div>
+                <div class="theme-tile" data-theme="sand">
+                    <div class="theme-preview-orb" style="background: radial-gradient(circle, #B88433 0%, #F6F0E4 100%);"></div>
+                    <div class="theme-tile-info">
+                        <h5>Imperial Sand</h5>
+                        <p>Royal Warm Desert Sand & Radiant Bronze</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IPHONE CONNECT MODAL -->
+    <div id="connect-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>📲 Connect StoryTeller iOS App</h3>
+                <button id="btn-close-connect-modal" class="modal-close">✕</button>
+            </div>
+            <div class="connect-box">
+                <p style="font-size: 13px; color: var(--text-secondary);">
+                    Your StoryTeller PC Server is running and accessible on your local Wi-Fi:
+                </p>
+                <div id="connect-ip-display" class="connect-ip-pill">
+                    http://localhost:8000
+                </div>
+                <ol class="connect-steps">
+                    <li>Make sure your iPhone is connected to the <strong>same Wi-Fi network</strong> as your PC.</li>
+                    <li>Open the <strong>StoryTeller iOS App</strong> on your iPhone.</li>
+                    <li>Tap the top status pill <strong>"Connect PC"</strong> and enter the URL above.</li>
+                    <li>You can now trigger ultra-fast rendering on your PC directly from your iPhone!</li>
+                </ol>
+            </div>
+        </div>
     </div>
 
     <script src="/static/app.js"></script>

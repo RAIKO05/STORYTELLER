@@ -80,3 +80,17 @@ def slugify(text: str, max_length: int = 40) -> str:
     text = re.sub(r'[^\w\s-]', '', text).strip().lower()
     text = re.sub(r'[-\s]+', '_', text)
     return text[:max_length]
+
+def get_local_ip() -> str:
+    """Retrieve local Wi-Fi / LAN IP address for iPhone connection."""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
