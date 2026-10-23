@@ -33,6 +33,11 @@ jobs:
       - name: 📱 Generate Xcode Project
         run: |
           cd ios
+          VERSION="1.0.${{ github.run_number }}"
+          echo "Setting up Info.plist version: $VERSION and Bundle ID: com.raiko.Storyteller"
+          plutil -replace CFBundleShortVersionString -string "$VERSION" Config/Info.plist || true
+          plutil -replace CFBundleVersion -string "${{ github.run_number }}" Config/Info.plist || true
+          plutil -replace CFBundleIdentifier -string "com.raiko.Storyteller" Config/Info.plist || true
           xcodegen generate
           sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' StoryTeller.xcodeproj/project.pbxproj || true
           sed -i '' 's/compatibilityVersion = "Xcode 16.0";/compatibilityVersion = "Xcode 15.0";/g' StoryTeller.xcodeproj/project.pbxproj || true
@@ -48,6 +53,7 @@ jobs:
             -derivedDataPath build/DerivedData \
             MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            PRODUCT_BUNDLE_IDENTIFIER="com.raiko.Storyteller" \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -64,6 +70,11 @@ jobs:
           cd ios
           mkdir -p build/Payload
           cp -R build/DerivedData/Build/Products/Release-iphoneos/StoryTeller.app build/Payload/
+          VERSION="1.0.${{ github.run_number }}"
+          echo "Verifying and updating App Payload Info.plist metadata..."
+          plutil -replace CFBundleShortVersionString -string "$VERSION" build/Payload/StoryTeller.app/Info.plist || true
+          plutil -replace CFBundleVersion -string "${{ github.run_number }}" build/Payload/StoryTeller.app/Info.plist || true
+          plutil -replace CFBundleIdentifier -string "com.raiko.Storyteller" build/Payload/StoryTeller.app/Info.plist || true
           cd build
           VERSION_TAG="v1.0.${{ github.run_number }}"
           zip -qr "StoryTeller_${VERSION_TAG}.ipa" Payload
@@ -92,7 +103,12 @@ jobs:
             - **Versioned IPA**: [`StoryTeller_v1.0.${{ github.run_number }}.ipa`](https://github.com/RAIKO05/STORYTELLER/releases/download/v1.0.${{ github.run_number }}/StoryTeller_v1.0.${{ github.run_number }}.ipa)
             - **Direct Alias**: [`StoryTeller.ipa`](https://github.com/RAIKO05/STORYTELLER/releases/download/v1.0.${{ github.run_number }}/StoryTeller.ipa)
 
+            #### ⚙️ App Identification:
+            - **Bundle Identifier**: `com.raiko.Storyteller`
+            - **App Version**: `1.0.${{ github.run_number }}` (Build `${{ github.run_number }}`)
+
             - **📱 100% On-Device Standalone**: Works anywhere directly on your iPhone! No PC or local Wi-Fi required.
+            - **✨ Bayan Luxury Liquid Glass UI/UX**: Multi-theme system (Obsidian, Deep Emerald, Royal Midnight, Pure OLED, Imperial Sand) with floating capsule dock.
             - **⚡ Hardware-Accelerated 1080x1920 Rendering**: Native AVFoundation + Apple VideoToolbox video composition engine renders viral 9:16 videos directly on iPhone.
             - **🗣️ On-Device & Neural Speech**: Synthesizes natural voiceover with synced word-level timestamps.
             - **🎮 Expanded Viral B-Roll Footage**: Universal H.264 Subway Surfers, Minecraft Parkour, GTA V Mega Ramp, ASMR loops, and offline procedural loops.
