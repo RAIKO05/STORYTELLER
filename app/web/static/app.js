@@ -344,6 +344,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const modeBtnIos = document.getElementById("mode-btn-ios");
+    if (modeBtnIos && connectModal) {
+        modeBtnIos.addEventListener("click", () => {
+            updateNetworkInfo();
+            connectModal.classList.add("open");
+        });
+    }
+
     if (btnCloseConnectModal && connectModal) {
         btnCloseConnectModal.addEventListener("click", () => {
             connectModal.classList.remove("open");

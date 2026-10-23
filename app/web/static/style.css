@@ -19,9 +19,9 @@
     --accent-dark: #A67C2E;
     --accent-glow: rgba(223, 177, 91, 0.35);
     --accent-gradient: linear-gradient(135deg, #DFB15B 0%, #F5CE7A 50%, #C49335 100%);
-    --mesh-orb1: rgba(223, 177, 91, 0.08);
-    --mesh-orb2: rgba(0, 242, 254, 0.06);
-    --mesh-orb3: rgba(138, 43, 226, 0.06);
+    --mesh-orb1: rgba(223, 177, 91, 0.20);
+    --mesh-orb2: rgba(51, 209, 224, 0.16);
+    --mesh-orb3: rgba(168, 85, 247, 0.14);
 
     --radius-sm: 8px;
     --radius-md: 14px;
@@ -40,72 +40,72 @@
 /* 1. Moroccan Emerald & Gold */
 body.theme-emerald {
     --bg-main: #021610;
-    --bg-panel: rgba(4, 28, 20, 0.80);
-    --bg-card: rgba(8, 42, 30, 0.72);
-    --bg-card-hover: rgba(12, 54, 40, 0.85);
+    --bg-panel: rgba(4, 28, 20, 0.82);
+    --bg-card: rgba(8, 42, 30, 0.75);
+    --bg-card-hover: rgba(12, 54, 40, 0.88);
     --bg-input: rgba(3, 20, 14, 0.92);
-    --border: rgba(64, 230, 153, 0.22);
-    --border-hover: rgba(64, 230, 153, 0.45);
+    --border: rgba(64, 230, 153, 0.25);
+    --border-hover: rgba(64, 230, 153, 0.50);
     --border-focus: #40E699;
     --accent: #40E699;
     --accent-light: #A7F3D0;
     --accent-dark: #059669;
-    --accent-glow: rgba(64, 230, 153, 0.35);
+    --accent-glow: rgba(64, 230, 153, 0.38);
     --accent-gradient: linear-gradient(135deg, #40E699 0%, #34D399 50%, #059669 100%);
-    --mesh-orb1: rgba(64, 230, 153, 0.10);
-    --mesh-orb2: rgba(223, 177, 91, 0.08);
-    --mesh-orb3: rgba(5, 150, 105, 0.08);
+    --mesh-orb1: rgba(64, 230, 153, 0.22);
+    --mesh-orb2: rgba(223, 177, 91, 0.16);
+    --mesh-orb3: rgba(5, 150, 105, 0.18);
 }
 
 /* 2. Sapphire Midnight & Cyan */
 body.theme-midnight {
     --bg-main: #04091A;
-    --bg-panel: rgba(8, 18, 40, 0.80);
-    --bg-card: rgba(14, 28, 58, 0.72);
-    --bg-card-hover: rgba(20, 38, 76, 0.85);
+    --bg-panel: rgba(8, 18, 40, 0.82);
+    --bg-card: rgba(14, 28, 58, 0.75);
+    --bg-card-hover: rgba(20, 38, 76, 0.88);
     --bg-input: rgba(5, 12, 28, 0.92);
-    --border: rgba(51, 209, 224, 0.22);
-    --border-hover: rgba(51, 209, 224, 0.45);
+    --border: rgba(51, 209, 224, 0.25);
+    --border-hover: rgba(51, 209, 224, 0.50);
     --border-focus: #33D1E0;
     --accent: #33D1E0;
     --accent-light: #A5F3FC;
     --accent-dark: #0891B2;
-    --accent-glow: rgba(51, 209, 224, 0.35);
+    --accent-glow: rgba(51, 209, 224, 0.38);
     --accent-gradient: linear-gradient(135deg, #33D1E0 0%, #38BDF8 50%, #0284C7 100%);
-    --mesh-orb1: rgba(51, 209, 224, 0.10);
-    --mesh-orb2: rgba(223, 177, 91, 0.08);
-    --mesh-orb3: rgba(30, 64, 175, 0.08);
+    --mesh-orb1: rgba(51, 209, 224, 0.22);
+    --mesh-orb2: rgba(223, 177, 91, 0.16);
+    --mesh-orb3: rgba(59, 130, 246, 0.18);
 }
 
 /* 3. Pure OLED True Black */
 body.theme-oled {
     --bg-main: #000000;
-    --bg-panel: rgba(14, 14, 14, 0.90);
-    --bg-card: rgba(22, 22, 22, 0.85);
-    --bg-card-hover: rgba(32, 32, 32, 0.95);
+    --bg-panel: rgba(14, 14, 14, 0.92);
+    --bg-card: rgba(22, 22, 22, 0.88);
+    --bg-card-hover: rgba(32, 32, 32, 0.98);
     --bg-input: rgba(10, 10, 10, 0.96);
-    --border: rgba(255, 255, 255, 0.15);
-    --border-hover: rgba(255, 255, 255, 0.35);
+    --border: rgba(255, 255, 255, 0.18);
+    --border-hover: rgba(255, 255, 255, 0.40);
     --border-focus: #F5E0A6;
     --accent: #F5E0A6;
     --accent-light: #FFF8E7;
     --accent-dark: #C9B277;
-    --accent-glow: rgba(245, 224, 166, 0.28);
+    --accent-glow: rgba(245, 224, 166, 0.32);
     --accent-gradient: linear-gradient(135deg, #F5E0A6 0%, #FFFFFF 50%, #D4C391 100%);
-    --mesh-orb1: rgba(255, 255, 255, 0.03);
-    --mesh-orb2: rgba(245, 224, 166, 0.04);
-    --mesh-orb3: rgba(255, 255, 255, 0.02);
+    --mesh-orb1: rgba(255, 255, 255, 0.06);
+    --mesh-orb2: rgba(245, 224, 166, 0.08);
+    --mesh-orb3: rgba(255, 255, 255, 0.04);
 }
 
 /* 4. Imperial Sand & Bronze (Warm Light Theme) */
 body.theme-sand {
     --bg-main: #F6F0E4;
-    --bg-panel: rgba(255, 255, 255, 0.85);
-    --bg-card: rgba(255, 255, 255, 0.92);
+    --bg-panel: rgba(255, 255, 255, 0.88);
+    --bg-card: rgba(255, 255, 255, 0.94);
     --bg-card-hover: rgba(255, 255, 255, 1.0);
     --bg-input: rgba(245, 238, 226, 0.95);
-    --border: rgba(184, 132, 51, 0.28);
-    --border-hover: rgba(184, 132, 51, 0.50);
+    --border: rgba(184, 132, 51, 0.32);
+    --border-hover: rgba(184, 132, 51, 0.55);
     --border-focus: #B88433;
     --text-primary: #1C1309;
     --text-secondary: #5C4D38;
@@ -113,12 +113,12 @@ body.theme-sand {
     --accent: #B88433;
     --accent-light: #E0AB57;
     --accent-dark: #8A5F1C;
-    --accent-glow: rgba(184, 132, 51, 0.30);
+    --accent-glow: rgba(184, 132, 51, 0.35);
     --accent-gradient: linear-gradient(135deg, #B88433 0%, #D4A24A 50%, #8A5F1C 100%);
-    --mesh-orb1: rgba(184, 132, 51, 0.12);
-    --mesh-orb2: rgba(245, 194, 107, 0.15);
-    --mesh-orb3: rgba(214, 162, 74, 0.10);
-    --shadow-glass: 0 16px 40px rgba(184, 132, 51, 0.12);
+    --mesh-orb1: rgba(184, 132, 51, 0.18);
+    --mesh-orb2: rgba(245, 194, 107, 0.22);
+    --mesh-orb3: rgba(214, 162, 74, 0.16);
+    --shadow-glass: 0 16px 40px rgba(184, 132, 51, 0.16);
 }
 
 * {
@@ -129,24 +129,90 @@ body.theme-sand {
 
 body {
     background-color: var(--bg-main);
-    background-image: 
-        radial-gradient(circle at 15% 10%, var(--mesh-orb1) 0%, transparent 40%),
-        radial-gradient(circle at 85% 25%, var(--mesh-orb2) 0%, transparent 45%),
-        radial-gradient(circle at 50% 90%, var(--mesh-orb3) 0%, transparent 50%);
-    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-main);
     font-size: 14px;
     line-height: 1.5;
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ======================================================== */
+/* FLUID LIQUID MESH AMBIENT BACKGROUND                     */
+/* (Matching SwiftUI LiquidMeshBackground in iOS app)      */
+/* ======================================================== */
+.liquid-mesh-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.mesh-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.75;
+    transition: background 0.6s ease;
+}
+
+.orb-1 {
+    width: 720px;
+    height: 720px;
+    background: var(--mesh-orb1);
+    top: -180px;
+    left: -150px;
+    animation: floatOrb1 16s ease-in-out infinite alternate;
+}
+
+.orb-2 {
+    width: 780px;
+    height: 780px;
+    background: var(--mesh-orb2);
+    top: 25%;
+    right: -220px;
+    animation: floatOrb2 19s ease-in-out infinite alternate;
+}
+
+.orb-3 {
+    width: 850px;
+    height: 850px;
+    background: var(--mesh-orb3);
+    bottom: -220px;
+    left: 20%;
+    animation: floatOrb3 22s ease-in-out infinite alternate;
+}
+
+@keyframes floatOrb1 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(140px, 90px) scale(1.18); }
+    100% { transform: translate(40px, 160px) scale(0.95); }
+}
+
+@keyframes floatOrb2 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-120px, 110px) scale(0.92); }
+    100% { transform: translate(-60px, -70px) scale(1.15); }
+}
+
+@keyframes floatOrb3 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(90px, -110px) scale(1.12); }
+    100% { transform: translate(-80px, -50px) scale(0.98); }
 }
 
 .app-container {
     max-width: 1540px;
     margin: 0 auto;
     padding: 20px 28px 60px;
+    position: relative;
+    z-index: 1;
 }
 
 /* NAVBAR */
@@ -156,12 +222,12 @@ body {
     align-items: center;
     padding: 14px 24px;
     background: var(--bg-panel);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-glass);
+    margin-bottom: 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .nav-brand {
@@ -177,6 +243,100 @@ body {
     object-fit: cover;
     border: 1px solid var(--accent);
     box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.brand-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.version-pill {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(223, 177, 91, 0.14);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+}
+
+/* MODE SWITCHER CAPSULE (Matches iOS CreatorView.swift) */
+.mode-capsule-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 22px;
+}
+
+.mode-switcher-capsule {
+    display: inline-flex;
+    background: var(--bg-panel);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    gap: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.mode-capsule-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+    color: var(--text-secondary);
+}
+
+.mode-capsule-btn.active {
+    background: var(--accent-gradient);
+    color: #0A0D14;
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.mode-capsule-btn.active strong,
+.mode-capsule-btn.active small {
+    color: #0A0D14;
+}
+
+.mode-capsule-btn:not(.active):hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.mode-capsule-icon {
+    font-size: 16px;
+}
+
+.mode-capsule-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.mode-capsule-text strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mode-capsule-text small {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.section-category-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--accent);
+    margin-bottom: 4px;
 }
 
 .nav-brand h1 {
@@ -260,55 +420,43 @@ body {
 /* PANELS */
 .panel {
     background: var(--bg-panel);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 22px;
-    box-shadow: var(--shadow-glass);
+    padding: 24px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* SECTION CARDS */
 .section-card {
     background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 18px 20px;
-    margin-bottom: 20px;
-    transition: border-color 0.25s, box-shadow 0.25s;
+    padding: 20px 22px;
+    margin-bottom: 22px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.25s ease;
 }
 
 .section-card:hover {
     border-color: var(--border-hover);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .section-header {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
     margin-bottom: 16px;
 }
 
-.step-num {
-    width: 28px;
-    height: 28px;
-    background: var(--accent-gradient);
-    color: #101522;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 13px;
-    flex-shrink: 0;
-    box-shadow: 0 2px 10px var(--accent-glow);
-}
-
 .section-header h2 {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 800;
     color: var(--text-primary);
+    margin-bottom: 2px;
 }
 
 .section-header p {
@@ -668,28 +816,64 @@ label {
     border-color: var(--accent);
 }
 
-/* CTA GENERATE BUTTON */
+/* CTA GENERATE BUTTON (Matching LiquidGoldActionButton in iOS) */
 .btn-cta {
     background: var(--accent-gradient);
     color: #080B11;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
-    padding: 16px 24px;
+    padding: 18px 28px;
     border-radius: var(--radius-md);
-    letter-spacing: 0.5px;
-    box-shadow: 0 6px 24px var(--accent-glow);
+    letter-spacing: 0.8px;
+    box-shadow: 0 10px 32px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    border: none;
+    cursor: pointer;
     position: relative;
     overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: goldPulse 4s infinite ease-in-out;
+}
+
+@keyframes goldPulse {
+    0%, 100% {
+        box-shadow: 0 10px 32px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+    50% {
+        box-shadow: 0 14px 44px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    }
+}
+
+.btn-cta::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(25deg);
+    transition: none;
+}
+
+.btn-cta:hover:not(:disabled)::after {
+    left: 120%;
+    transition: left 0.75s ease;
 }
 
 .btn-cta:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 32px var(--accent-glow);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 16px 48px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .btn-cta:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    animation: none;
 }
 
 /* PROGRESS BAR */

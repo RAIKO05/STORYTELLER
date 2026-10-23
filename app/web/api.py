@@ -43,7 +43,14 @@ app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")
 
 @app.get("/")
 def read_root():
-    return FileResponse(Path(__file__).parent / "static" / "index.html")
+    return FileResponse(
+        Path(__file__).parent / "static" / "index.html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/api/network-info")
 def get_network_info():

@@ -5,17 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StoryTeller Pro - Viral TikTok & Shorts Video Studio</title>
     <link rel="icon" type="image/png" href="/static/logo.png">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=2.2.0">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body class="theme-obsidian">
+    <!-- Theme-Adaptive Fluid Liquid Mesh Ambient Background (Matches iOS LiquidMeshBackground) -->
+    <div class="liquid-mesh-canvas" aria-hidden="true">
+        <div class="mesh-orb orb-1"></div>
+        <div class="mesh-orb orb-2"></div>
+        <div class="mesh-orb orb-3"></div>
+    </div>
+
     <div class="app-container">
         <!-- Top Navigation Bar -->
         <header class="navbar">
             <div class="nav-brand">
                 <img src="/static/logo.png" alt="StoryTeller Logo" class="logo-img">
                 <div>
-                    <h1>STORYTELLER <span>PRO</span></h1>
+                    <div class="brand-row">
+                        <h1>STORYTELLER <span>PRO</span></h1>
+                        <span class="version-pill">v1.0.17</span>
+                    </div>
                     <p class="tagline">Cinematic Studio & Viral Video Automation</p>
                 </div>
             </div>
@@ -32,18 +42,36 @@
             </div>
         </header>
 
+        <!-- Mode Switcher Capsule (Matches iOS CreatorView.swift) -->
+        <div class="mode-capsule-container">
+            <div class="mode-switcher-capsule">
+                <div class="mode-capsule-btn" id="mode-btn-ios">
+                    <span class="mode-capsule-icon">📱</span>
+                    <div class="mode-capsule-text">
+                        <strong>Standalone (iPhone)</strong>
+                        <small>On-Device ML & Whisper</small>
+                    </div>
+                </div>
+                <div class="mode-capsule-btn active" id="mode-btn-pc">
+                    <span class="mode-capsule-icon">💻</span>
+                    <div class="mode-capsule-text">
+                        <strong>PC Studio Server</strong>
+                        <small>Local Wi-Fi Fast Rendering</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Workspace -->
         <main class="main-grid">
             <!-- Left Column: Controls & Pipeline -->
             <section class="panel control-panel">
-                <!-- STEP 1: STORY SOURCE -->
+                <!-- STORY SOURCE & NARRATIVE -->
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="step-num">1</span>
-                        <div>
-                            <h2>Choose Story Source</h2>
-                            <p>Pick a curated viral script, scrape from Reddit/Quora/YouTube, or generate with AI</p>
-                        </div>
+                        <span class="section-category-tag">STORY SCRIPT & HOOK</span>
+                        <h2>Choose Story Source</h2>
+                        <p>Pick a curated viral script, scrape from Reddit/Quora/YouTube, or generate with AI</p>
                     </div>
 
                     <!-- Source Selector Tabs (Matches iPhone 1:1) -->
@@ -238,11 +266,9 @@
                 <!-- STEP 2: VOICE & AUDIO CUSTOMIZER -->
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="step-num">2</span>
-                        <div>
-                            <h2>Voice & Audio Customizer</h2>
-                            <p>Choose neural narrator, speed pacing, and mix ambient background music</p>
-                        </div>
+                        <span class="section-category-tag">VOICE & AUDIO MIXING</span>
+                        <h2>Voice & Audio Customizer</h2>
+                        <p>Choose neural narrator, speed pacing, and mix ambient background music</p>
                     </div>
 
                     <div class="form-row">
@@ -314,11 +340,9 @@
                 <!-- STEP 3: BACKGROUND FOOTAGE & SUBTITLE CUSTOMIZER -->
                 <div class="section-card">
                     <div class="section-header">
-                        <span class="step-num">3</span>
-                        <div>
-                            <h2>Background Footage & Subtitle Styling</h2>
-                            <p>Customize vertical 9:16 footage, dynamic karaoke animations, and font typography</p>
-                        </div>
+                        <span class="section-category-tag">VISUALS & TYPOGRAPHY</span>
+                        <h2>Background Footage & Subtitle Styling</h2>
+                        <p>Customize vertical 9:16 footage, dynamic karaoke animations, and font typography</p>
                     </div>
 
                     <div class="form-row">
@@ -544,6 +568,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=2.2.0"></script>
 </body>
 </html>
