@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StoryTeller Pro - Viral TikTok & Shorts Video Studio</title>
     <link rel="icon" type="image/png" href="/static/logo.png">
-    <link rel="stylesheet" href="/static/style.css?v=2.2.0">
+    <link rel="stylesheet" href="/static/style.css?v=2.3.0">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body class="theme-obsidian">
@@ -24,7 +24,7 @@
                 <div>
                     <div class="brand-row">
                         <h1>STORYTELLER <span>PRO</span></h1>
-                        <span class="version-pill">v1.0.17</span>
+                        <span class="version-pill">v1.0.18</span>
                     </div>
                     <p class="tagline">Cinematic Studio & Viral Video Automation</p>
                 </div>
@@ -235,9 +235,28 @@
                     <!-- STORY SCRIPT EDITOR -->
                     <div class="story-editor-box">
                         <div class="editor-header">
-                            <label>ACTIVE STORY SCRIPT</label>
-                            <span id="word-counter" class="counter-badge">0 words • ~0s video</span>
+                            <label>ACTIVE STORY SCRIPT & HOOK</label>
+                            <div class="editor-actions-row">
+                                <button id="btn-open-hook-doctor" class="btn-tool-pill" title="AI Hook Doctor">
+                                    ⚡ Hook Doctor
+                                </button>
+                                <button id="btn-split-story" class="btn-tool-pill" title="Split into Part 1 & Part 2">
+                                    ✂️ Split Parts
+                                </button>
+                                <span id="word-counter" class="counter-badge">0 words • ~0s video</span>
+                            </div>
                         </div>
+
+                        <!-- Multi-Part Bar (shown when split is active) -->
+                        <div id="story-parts-bar" class="story-parts-bar" style="display: none;">
+                            <button id="btn-part-1" class="part-pill active">
+                                <span>1️⃣</span> Part 1 (Hook & Cliffhanger)
+                            </button>
+                            <button id="btn-part-2" class="part-pill">
+                                <span>2️⃣</span> Part 2 (The Climax)
+                            </button>
+                        </div>
+
                         <input type="text" id="story-title" class="form-control title-input" placeholder="Viral Hook Title (e.g. AITA for uninviting my sister...)">
                         <textarea id="story-text" class="form-control story-textarea" rows="6" placeholder="Paste or edit the full story text here... Newlines and multiple paragraphs are fully supported!"></textarea>
                     </div>
@@ -568,6 +587,22 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=2.2.0"></script>
+    <!-- AI HOOK DOCTOR MODAL -->
+    <div id="hook-doctor-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⚡ AI Viral Hook Doctor</h3>
+                <button id="btn-close-hook-doctor" class="modal-close">✕</button>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+                90% of viral retention happens in the first 3 seconds. Select a proven hook formula below:
+            </p>
+            <div id="hook-cards-list" class="hook-cards-list">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=2.3.0"></script>
 </body>
 </html>

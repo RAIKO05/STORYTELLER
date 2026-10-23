@@ -19,6 +19,11 @@ public class NativeVideoCompositor {
         public var wordTimestamps: [WordTiming]
         public var subtitleStyle: String // "karaoke", "single", "auto"
         public var highlightColorHex: String // e.g. "&H00FFFF&" or "#FFEE00"
+        public var subtitlePosition: String = "lower" // "lower", "center", "upper"
+        public var fontSize: CGFloat = 52.0
+        public var bgMusicID: String? = nil
+        public var bgMusicVolume: Float = 0.15
+        public var voiceVolume: Float = 1.0
         public var progressCallback: ((Double, String) -> Void)?
     }
 
@@ -68,12 +73,36 @@ public class NativeVideoCompositor {
 
         // 2. Insert narration audio first to obtain exact uncompressed timeline duration
         var effectiveDuration = totalDuration
+        var compVoiceTrack: AVMutableCompositionTrack? = nil
         if let narrationTrack = try? await audioAsset.loadTracks(withMediaType: .audio).first {
             let rawAudioDuration = (try? await audioAsset.load(.duration)) ?? CMTime.zero
             if rawAudioDuration.isNumeric && rawAudioDuration.seconds > 0.1 {
-                if let compAudioTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
-                    try? compAudioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: rawAudioDuration), of: narrationTrack, at: .zero)
+                if let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                    try? track.insertTimeRange(CMTimeRange(start: .zero, duration: rawAudioDuration), of: narrationTrack, at: .zero)
                     effectiveDuration = max(totalDuration, rawAudioDuration)
+                    compVoiceTrack = track
+                }
+            }
+        }
+
+        // 2b. Insert ambient background music (BGM) if selected
+        var compBgmTrack: AVMutableCompositionTrack? = nil
+        if let bgmID = options.bgMusicID, bgmID != "none", let bgmURL = findBgmURL(for: bgmID) {
+            let bgmAsset = AVURLAsset(url: bgmURL)
+            if let bgmAudioTrack = try? await bgmAsset.loadTracks(withMediaType: .audio).first {
+                let rawBgmDur = (try? await bgmAsset.load(.duration)) ?? CMTime(seconds: 15, preferredTimescale: 600)
+                let bgmDuration = (rawBgmDur.isNumeric && rawBgmDur.seconds > 0.5) ? rawBgmDur : CMTime(seconds: 15, preferredTimescale: 600)
+
+                if let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+                    var bgmCur = CMTime.zero
+                    while bgmCur < effectiveDuration {
+                        let rem = effectiveDuration - bgmCur
+                        let slice = (rem < bgmDuration) ? rem : bgmDuration
+                        if slice.seconds <= 0.01 { break }
+                        try? track.insertTimeRange(CMTimeRange(start: .zero, duration: slice), of: bgmAudioTrack, at: bgmCur)
+                        bgmCur = bgmCur + slice
+                    }
+                    compBgmTrack = track
                 }
             }
         }
@@ -128,6 +157,28 @@ public class NativeVideoCompositor {
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
 
+        // 4b. Audio Mix with Voice and Background Music
+        var audioMix: AVMutableAudioMix? = nil
+        var audioMixParams: [AVMutableAudioMixInputParameters] = []
+
+        if let voiceTrack = compVoiceTrack {
+            let voiceParams = AVMutableAudioMixInputParameters(track: voiceTrack)
+            voiceParams.setVolume(options.voiceVolume, at: .zero)
+            audioMixParams.append(voiceParams)
+        }
+
+        if let bgmTrack = compBgmTrack {
+            let bgmParams = AVMutableAudioMixInputParameters(track: bgmTrack)
+            bgmParams.setVolume(options.bgMusicVolume, at: .zero)
+            audioMixParams.append(bgmParams)
+        }
+
+        if !audioMixParams.isEmpty {
+            let mix = AVMutableAudioMix()
+            mix.inputParameters = audioMixParams
+            audioMix = mix
+        }
+
         options.progressCallback?(0.35, "Generating dynamic viral karaoke subtitles...")
 
         // 5. Build Subtitle Overlay Layers
@@ -143,12 +194,14 @@ public class NativeVideoCompositor {
         subtitleOverlayLayer.frame = CGRect(origin: .zero, size: targetSize)
         parentLayer.addSublayer(subtitleOverlayLayer)
 
-        // Build caption chunks (3-4 words per phrase or single bouncy words)
+        // Build caption chunks with customizable position and font size
         buildKaraokeCaptionLayers(
             into: subtitleOverlayLayer,
             words: options.wordTimestamps,
             style: options.subtitleStyle,
             highlightHex: options.highlightColorHex,
+            position: options.subtitlePosition,
+            fontSize: options.fontSize,
             canvasSize: targetSize
         )
 
@@ -174,6 +227,9 @@ public class NativeVideoCompositor {
         exportSession.videoComposition = videoComposition
         exportSession.timeRange = CMTimeRange(start: .zero, duration: effectiveDuration)
         exportSession.shouldOptimizeForNetworkUse = true
+        if let mix = audioMix {
+            exportSession.audioMix = mix
+        }
 
         // Progress polling task
         let progressTask = Task {
@@ -247,6 +303,8 @@ public class NativeVideoCompositor {
         words: [WordTiming],
         style: String,
         highlightHex: String,
+        position: String = "lower",
+        fontSize: CGFloat = 52.0,
         canvasSize: CGSize
     ) {
         guard !words.isEmpty else { return }
@@ -262,6 +320,8 @@ public class NativeVideoCompositor {
                     startTime: w.start,
                     endTime: w.end,
                     textColor: highlightColor,
+                    position: position,
+                    fontSize: fontSize + 16,
                     canvasSize: canvasSize
                 )
                 container.addSublayer(textLayer)
@@ -294,6 +354,8 @@ public class NativeVideoCompositor {
                     startTime: chunkStart,
                     endTime: chunkEnd,
                     highlightColor: highlightColor,
+                    position: position,
+                    fontSize: fontSize,
                     canvasSize: canvasSize
                 )
                 container.addSublayer(textLayer)
@@ -306,14 +368,24 @@ public class NativeVideoCompositor {
         startTime: Double,
         endTime: Double,
         highlightColor: UIColor,
+        position: String = "lower",
+        fontSize: CGFloat = 52.0,
         canvasSize: CGSize
     ) -> CALayer {
         let container = CALayer()
         let width: CGFloat = canvasSize.width - 120
         let height: CGFloat = 160
-        // Centered vertically in the lower half (TikTok sweet spot)
         let x: CGFloat = 60
-        let y: CGFloat = (canvasSize.height / 2.0) - 80
+
+        let y: CGFloat
+        switch position {
+        case "upper":
+            y = canvasSize.height * 0.65 - (height / 2.0)
+        case "center":
+            y = canvasSize.height * 0.50 - (height / 2.0)
+        default: // "lower"
+            y = canvasSize.height * 0.30 - (height / 2.0)
+        }
 
         container.frame = CGRect(x: x, y: y, width: width, height: height)
         container.opacity = 0.0
@@ -328,8 +400,8 @@ public class NativeVideoCompositor {
         let textLayer = CATextLayer()
         textLayer.frame = CGRect(x: 10, y: 32, width: width - 20, height: height - 50)
         textLayer.string = text
-        textLayer.font = CTFontCreateWithName("AvenirNext-Heavy" as CFString, 52, nil)
-        textLayer.fontSize = 52
+        textLayer.font = CTFontCreateWithName("AvenirNext-Heavy" as CFString, fontSize, nil)
+        textLayer.fontSize = fontSize
         textLayer.alignmentMode = .center
         textLayer.foregroundColor = highlightColor.cgColor
         textLayer.isWrapped = true
@@ -372,13 +444,24 @@ public class NativeVideoCompositor {
         startTime: Double,
         endTime: Double,
         textColor: UIColor,
+        position: String = "lower",
+        fontSize: CGFloat = 68.0,
         canvasSize: CGSize
     ) -> CALayer {
         let container = CALayer()
         let width: CGFloat = canvasSize.width - 160
         let height: CGFloat = 140
         let x: CGFloat = 80
-        let y: CGFloat = (canvasSize.height / 2.0) - 70
+
+        let y: CGFloat
+        switch position {
+        case "upper":
+            y = canvasSize.height * 0.65 - (height / 2.0)
+        case "center":
+            y = canvasSize.height * 0.50 - (height / 2.0)
+        default: // "lower"
+            y = canvasSize.height * 0.30 - (height / 2.0)
+        }
 
         container.frame = CGRect(x: x, y: y, width: width, height: height)
         container.opacity = 0.0
@@ -386,12 +469,50 @@ public class NativeVideoCompositor {
         let textLayer = CATextLayer()
         textLayer.frame = CGRect(x: 0, y: 15, width: width, height: height)
         textLayer.string = text
-        textLayer.font = CTFontCreateWithName("AvenirNext-Heavy" as CFString, 74, nil)
-        textLayer.fontSize = 74
+        textLayer.font = CTFontCreateWithName("AvenirNext-Heavy" as CFString, fontSize, nil)
+        textLayer.fontSize = fontSize
         textLayer.alignmentMode = .center
         textLayer.foregroundColor = textColor.cgColor
         textLayer.contentsScale = 2.0
         textLayer.shadowColor = UIColor.black.cgColor
+        textLayer.shadowOpacity = 1.0
+        textLayer.shadowRadius = 10
+        textLayer.shadowOffset = CGSize(width: 0, height: 4)
+
+        container.addSublayer(textLayer)
+
+        let duration = max(endTime - startTime, 0.25)
+
+        let opacityAnim = CAKeyframeAnimation(keyPath: "opacity")
+        opacityAnim.values = [0.0, 1.0, 1.0, 0.0]
+        opacityAnim.keyTimes = [0.0, 0.02, 0.98, 1.0]
+        opacityAnim.duration = duration
+        opacityAnim.beginTime = AVCoreAnimationBeginTimeAtZero + startTime
+        opacityAnim.fillMode = .both
+        opacityAnim.isRemovedOnCompletion = false
+
+        let scaleAnim = CAKeyframeAnimation(keyPath: "transform.scale")
+        scaleAnim.values = [0.75, 1.22, 1.0]
+        scaleAnim.keyTimes = [0.0, 0.35, 1.0]
+        scaleAnim.duration = min(duration, 0.22)
+        scaleAnim.beginTime = AVCoreAnimationBeginTimeAtZero + startTime
+        scaleAnim.fillMode = .both
+        scaleAnim.isRemovedOnCompletion = false
+
+        container.add(opacityAnim, forKey: "opacity")
+        container.add(scaleAnim, forKey: "scale")
+
+        return container
+    }
+
+    private func findBgmURL(for id: String) -> URL? {
+        if let url = Bundle.main.url(forResource: id, withExtension: "m4a") { return url }
+        if let url = Bundle.main.url(forResource: id, withExtension: "m4a", subdirectory: "Audio") { return url }
+        if let url = Bundle.main.url(forResource: id, withExtension: "m4a", subdirectory: "Resources/Audio") { return url }
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Audio/\(id).m4a")
+        if FileManager.default.fileExists(atPath: docs.path) { return docs }
+        return nil
+    }
         textLayer.shadowOpacity = 1.0
         textLayer.shadowRadius = 10
         textLayer.shadowOffset = CGSize(width: 0, height: 4)

@@ -287,3 +287,135 @@ class AIViralStoryGenerator:
             "story": cleaned,
             "vibe_analysis": vibe_analysis
         }
+
+    def generate_viral_hooks(self, title: str, story: str) -> list:
+        """AI Hook Doctor: Generates 3 viral hook variations (Shock, POV, Moral Dilemma)."""
+        combined = f"{title} {story}".lower()
+        has_family = any(w in combined for w in ["sister", "brother", "mom", "dad", "family", "wedding", "husband", "wife"])
+        has_work = any(w in combined for w in ["boss", "manager", "job", "fired", "bonus", "company", "corporate"])
+        has_mystery = any(w in combined for w in ["monitor", "ghost", "creepy", "door", "night", "whisper", "house"])
+        has_crime = any(w in combined for w in ["heist", "diamond", "stolen", "police", "robbery", "vault"])
+
+        # 1. Shock & Curiosity
+        if has_family:
+            shock_title = "The 10-second video that completely destroyed my sister's wedding."
+            shock_opening = "I never thought three years of keeping my mouth shut would end like this, but when she called the coordinator a murderer in front of two hundred guests, I lost all patience."
+        elif has_work:
+            shock_title = "How I got my CEO to fire my boss in under 8 seconds."
+            shock_opening = "If my manager hadn't stolen our entire departmental bonus pool, he would still have his two hundred thousand dollar a year job today."
+        elif has_mystery:
+            shock_title = "Whatever you do, never buy a vintage baby monitor at a garage sale."
+            shock_opening = "At 3:14 AM on Thursday, the static crackled to life in my daughter's room, but the sound coming out of the receiver was impossible."
+        elif has_crime:
+            shock_title = "The $50 million diamond vault heist that used an ordinary can of hairspray."
+            shock_opening = "They bypassed seismic sensors, Doppler radar, and infrared heat curtains, and the police still have no idea where the diamonds went."
+        else:
+            shock_title = "Wait until the very end, because nobody saw this twist coming."
+            shock_opening = "I used to think people were exaggerating when they told me stories like this, until the exact same thing happened to me yesterday."
+
+        # 2. POV Immersion
+        if has_family:
+            pov_title = "POV: You find out your sister's 3-year allergy was a lie."
+            pov_opening = "POV: You walk into a random Italian trattoria on your lunch break and catch the one person who forced the entire family to eat bland food inhaling garlic bread."
+        elif has_work:
+            pov_title = "POV: Your manager steals your bonus so you automate his career away."
+            pov_opening = "POV: You open Python after hours, write five automation scripts, and wait for the executive board meeting to casually show the VP your screen."
+        elif has_mystery:
+            pov_title = "POV: The baby monitor turns on, but there are no batteries inside."
+            pov_opening = "POV: You hear a rocking chair creaking on wooden floorboards in your daughter's carpeted bedroom at three in the morning."
+        else:
+            pov_title = "POV: You finally expose the one person who thought they were untouchable."
+            pov_opening = "POV: You have the exact timestamped evidence, and the moment has finally arrived to lay it all out on the table."
+
+        # 3. Moral Dilemma
+        if has_family:
+            dilemma_title = "Am I the jerk for playing this video at my sister's wedding?"
+            dilemma_opening = "Half the guests walked out, my mother hasn't spoken to me in 48 hours, but I need you to hear the full story before you judge me."
+        elif has_work:
+            dilemma_title = "Was I wrong for destroying my boss's career over a bonus?"
+            dilemma_opening = "HR called my actions ruthless, but he took fifteen thousand dollars straight out of our pockets. Tell me in the comments if I crossed the line."
+        else:
+            dilemma_title = "Listen to the full story before you decide if I was wrong."
+            dilemma_opening = "Everyone in my circle is divided right down the middle on this, and I genuinely need an unbiased third party to tell me the truth."
+
+        return [
+            {
+                "style": "Curiosity & Shock",
+                "badge": "🔥 89% RETENTION",
+                "hook_title": shock_title,
+                "hook_opening": shock_opening,
+                "viral_strategy": "Creates an instant high-stakes curiosity gap that stops viewers from scrolling in the first 2 seconds."
+            },
+            {
+                "style": "POV Immersion",
+                "badge": "👁️ TIKTOK VIRAL",
+                "hook_title": pov_title,
+                "hook_opening": pov_opening,
+                "viral_strategy": "Puts the viewer directly in the protagonist's shoes, triggering mirror neurons and higher shares."
+            },
+            {
+                "style": "Moral Dilemma",
+                "badge": "💬 5X COMMENTS",
+                "hook_title": dilemma_title,
+                "hook_opening": dilemma_opening,
+                "viral_strategy": "Triggers strong debate in the comments section, signaling the algorithm to push to the FYP."
+            }
+        ]
+
+    def split_story_into_parts(self, title: str, story: str) -> dict:
+        """Splits long stories (> 80 words) into high-retention Part 1 (Cliffhanger) & Part 2."""
+        words = story.split()
+        if len(words) < 70:
+            return {
+                "is_splittable": False,
+                "part1_title": title,
+                "part1_story": story,
+                "part2_title": "",
+                "part2_story": ""
+            }
+
+        sentences = re.split(r'(?<=[.!?])\s+', story.strip())
+        target_words = int(len(words) * 0.55)
+        cumulative = 0
+        split_idx = max(1, len(sentences) // 2)
+
+        for i, s in enumerate(sentences):
+            cumulative += len(s.split())
+            if cumulative >= target_words:
+                split_idx = i
+                break
+
+        p1_text = " ".join(sentences[:split_idx+1])
+        p2_text = " ".join(sentences[split_idx+1:])
+
+        cliffhanger = " What happened next left everyone completely speechless... Follow and check my profile for Part 2! ➡️"
+        part1_final = p1_text + cliffhanger
+        part2_final = "Welcome back to Part 2! Here is what happened next: " + p2_text
+
+        clean_title = re.sub(r'\(Part\s*\d+\)', '', title).strip()
+
+        return {
+            "is_splittable": True,
+            "part1_title": f"{clean_title} (Part 1) 🔥",
+            "part1_story": part1_final,
+            "part2_title": f"{clean_title} (Part 2 - The Conclusion) 💥",
+            "part2_story": part2_final
+        }
+
+    def generate_viral_hashtags(self, title: str, story: str) -> list:
+        """Generates dynamic category-specific viral hashtags."""
+        combined = f"{title} {story}".lower()
+        tags = ["#StoryTime", "#TikTokStories", "#ViralTikTok", "#Shorts"]
+
+        if any(w in combined for w in ["sister", "wedding", "aita", "family"]):
+            tags.extend(["#AITA", "#RedditStories", "#FamilyDrama", "#WeddingDrama", "#Exposed"])
+        elif any(w in combined for w in ["boss", "job", "bonus", "work"]):
+            tags.extend(["#PettyRevenge", "#MaliciousCompliance", "#WorkTok", "#CorporateLife", "#InstantKarma"])
+        elif any(w in combined for w in ["monitor", "creepy", "mystery"]):
+            tags.extend(["#CreepyStories", "#TrueHorror", "#Unexplained", "#Mystery", "#PlotTwist"])
+        elif any(w in combined for w in ["heist", "diamond", "crime"]):
+            tags.extend(["#TrueCrime", "#HeistStory", "#Mastermind", "#Unsolved", "#CrimeTok"])
+        else:
+            tags.extend(["#RedditReadings", "#CrazyStory", "#DidThisHappen", "#PlotTwist"])
+
+        return tags[:8]

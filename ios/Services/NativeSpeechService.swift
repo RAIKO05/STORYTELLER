@@ -6,10 +6,33 @@ public class NativeSpeechService: NSObject, AVSpeechSynthesizerDelegate {
     public static let shared = NativeSpeechService()
 
     private var sharedSynthesizer = AVSpeechSynthesizer()
+    private var previewSynthesizer = AVSpeechSynthesizer()
 
     public override init() {
         super.init()
         sharedSynthesizer.delegate = self
+    }
+
+    /// Previews a short spoken sample of a voice directly on the device.
+    public func previewVoice(voiceId: String, sampleText: String = "Welcome to StoryTeller Pro. Creating viral videos in seconds.") {
+        if previewSynthesizer.isSpeaking {
+            previewSynthesizer.stopSpeaking(at: .immediate)
+        }
+        let voice = selectVoice(voiceId: voiceId)
+        let utterance = AVSpeechUtterance(string: sampleText)
+        utterance.voice = voice
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.05
+        previewSynthesizer.speak(utterance)
+    }
+
+    public func stopVoicePreview() {
+        if previewSynthesizer.isSpeaking {
+            previewSynthesizer.stopSpeaking(at: .immediate)
+        }
+    }
+
+    public var isPreviewing: Bool {
+        previewSynthesizer.isSpeaking
     }
 
     public struct SpeechResult {

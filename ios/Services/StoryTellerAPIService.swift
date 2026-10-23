@@ -258,7 +258,12 @@ public class StoryTellerAPIService: ObservableObject {
         rate: String = "auto",
         background: String = "auto",
         subtitleStyle: String = "auto",
-        highlightColor: String = "auto"
+        highlightColor: String = "auto",
+        subtitlePosition: String = "lower",
+        fontSize: Double = 52.0,
+        bgMusic: String = "none",
+        voiceVolume: Double = 1.0,
+        bgMusicVolume: Double = 0.15
     ) async throws -> GenerationResult {
         isGenerating = true
         generationPercent = 0.05
@@ -325,7 +330,12 @@ public class StoryTellerAPIService: ObservableObject {
                 audioDuration: speech.duration,
                 wordTimestamps: speech.words,
                 subtitleStyle: resolvedStyle,
-                highlightColorHex: resolvedColor
+                highlightColorHex: resolvedColor,
+                subtitlePosition: subtitlePosition,
+                fontSize: CGFloat(fontSize),
+                bgMusicID: bgMusic == "none" ? nil : bgMusic,
+                bgMusicVolume: Float(bgMusicVolume),
+                voiceVolume: Float(voiceVolume)
             ) { [weak self] pct, status in
                 Task { @MainActor in
                     self?.generationPercent = pct
@@ -338,7 +348,7 @@ public class StoryTellerAPIService: ObservableObject {
             let wordCount = story.split(whereSeparator: \.isWhitespace).count
             let safeTitle = title.replacingOccurrences(of: "\"", with: "")
             let caption = "\(safeTitle) 🤯 Wait for the end... What would you do? 👇"
-            let hashtags = "#fyp #redditstories #storytime #aita #viral #tiktok #trending"
+            let hashtags = ViralStoryIntelligence.shared.generateHashtags(title: title, story: story).joined(separator: " ")
 
             return GenerationResult(
                 job_id: UUID().uuidString,
@@ -362,14 +372,26 @@ public class StoryTellerAPIService: ObservableObject {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.timeoutInterval = 300
 
-            let body: [String: String] = [
+            let marginV: Int
+            switch subtitlePosition {
+            case "upper": marginV = 1250
+            case "center": marginV = 950
+            default: marginV = 650
+            }
+
+            let body: [String: Any] = [
                 "title": title,
                 "story": story,
                 "voice": resolvedVoice,
                 "rate": rate,
                 "background_id": resolvedBg,
                 "subtitle_style": resolvedStyle,
-                "highlight_color": resolvedColor
+                "highlight_color": resolvedColor,
+                "margin_v": marginV,
+                "font_size": Int(fontSize),
+                "bg_music_id": bgMusic == "none" ? NSNull() : bgMusic,
+                "bg_music_volume": bgMusicVolume,
+                "voice_volume": voiceVolume
             ]
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
 

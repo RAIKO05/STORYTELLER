@@ -140,6 +140,16 @@ def analyze_story(req: AnalyzeStoryRequest):
     analysis = ai_generator.analyze_story_vibe(req.story, req.title or "")
     return {"status": "success", "analysis": analysis}
 
+@app.post("/api/ai/hook-doctor")
+def get_hook_doctor(req: AnalyzeStoryRequest):
+    hooks = ai_generator.generate_viral_hooks(req.title or "", req.story or "")
+    return {"status": "success", "hooks": hooks}
+
+@app.post("/api/ai/split-story")
+def get_split_story(req: AnalyzeStoryRequest):
+    parts = ai_generator.split_story_into_parts(req.title or "", req.story or "")
+    return {"status": "success", "parts": parts}
+
 # ----------------- REDDIT -----------------
 @app.get("/api/reddit/stories")
 def get_reddit_stories(subreddit: str = "AmItheAsshole", query: str = ""):

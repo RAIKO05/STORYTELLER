@@ -78,6 +78,17 @@ public struct CreatorView: View {
     @State private var isAnalyzing: Bool = false
     @State private var analyzeTask: Task<Void, Never>?
 
+    // Studio Features State
+    @State private var showHookDoctorSheet: Bool = false
+    @State private var isPlayingVoicePreview: Bool = false
+    @State private var selectedBgMusic: String = "cinematic_ambient"
+    @State private var voiceVolume: Double = 1.0 // 0.5 - 1.5
+    @State private var bgMusicVolume: Double = 0.15 // 0.0 - 0.40
+    @State private var subtitlePosition: String = "lower" // lower, center, upper
+    @State private var subtitleFontSize: Double = 52.0 // 52, 64, 76
+    @State private var storyParts: StoryParts? = nil
+    @State private var activePart: Int = 1
+
     // Generation & Sheets
     @State private var showConnectSheet: Bool = false
     @State private var showThemeSheet: Bool = false
@@ -186,6 +197,15 @@ public struct CreatorView: View {
             }
             .sheet(isPresented: $showConnectSheet) {
                 ServerConnectSheet()
+            }
+            .sheet(isPresented: $showHookDoctorSheet) {
+                HookDoctorSheet(originalTitle: storyTitle, originalStory: storyText) { newTitle, newOpening in
+                    self.storyTitle = newTitle
+                    if !storyText.lowercased().contains(newOpening.lowercased().prefix(25)) {
+                        self.storyText = "\(newOpening)\n\n\(storyText)"
+                    }
+                    triggerAnalysis()
+                }
             }
             .sheet(item: Binding<GenerationResult?>(
                 get: { generatedResult },
@@ -552,11 +572,83 @@ public struct CreatorView: View {
     private var storyEditorCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Story Script")
+                Text("Story Script & Hook")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundColor(themeManager.currentTheme.textPrimary)
+
                 Spacer()
+
+                // AI Hook Doctor Action Button
+                Button(action: {
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    #endif
+                    showHookDoctorSheet = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.badge.automatic.fill")
+                        Text("Hook Doctor")
+                    }
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(BayanTokens.gold)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(BayanTokens.gold.opacity(0.18))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(BayanTokens.gold.opacity(0.4), lineWidth: 0.8))
+                }
+
+                // Split Part 1 & Part 2 Button
+                if storyText.split(whereSeparator: \.isWhitespace).count >= 70 {
+                    Button(action: toggleStorySplit) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "scissors")
+                            Text(storyParts == nil ? "Split Parts" : "Merge")
+                        }
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(themeManager.currentTheme.accentColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(themeManager.currentTheme.accentColor.opacity(0.15))
+                        .cornerRadius(8)
+                    }
+                }
+
                 LiquidGlassPill(text: wordCountText, icon: "clock.fill", isGold: true)
+            }
+
+            // Part 1 / Part 2 Segmented Selector (if split active)
+            if let parts = storyParts {
+                HStack(spacing: 8) {
+                    Button(action: { selectPart(1, parts) }) {
+                        HStack {
+                            Image(systemName: "1.circle.fill")
+                            Text("Part 1 (Hook & Cliffhanger)")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(activePart == 1 ? themeManager.currentTheme.accentColor.opacity(0.25) : Color.white.opacity(0.05))
+                        .foregroundColor(activePart == 1 ? themeManager.currentTheme.accentColor : themeManager.currentTheme.textSecondary)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activePart == 1 ? themeManager.currentTheme.accentColor : Color.clear, lineWidth: 1))
+                    }
+
+                    Button(action: { selectPart(2, parts) }) {
+                        HStack {
+                            Image(systemName: "2.circle.fill")
+                            Text("Part 2 (The Climax)")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(activePart == 2 ? themeManager.currentTheme.accentColor.opacity(0.25) : Color.white.opacity(0.05))
+                        .foregroundColor(activePart == 2 ? themeManager.currentTheme.accentColor : themeManager.currentTheme.textSecondary)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activePart == 2 ? themeManager.currentTheme.accentColor : Color.clear, lineWidth: 1))
+                    }
+                }
+                .padding(.vertical, 2)
             }
 
             TextField("Title / Viral Hook (e.g. AITA for uninviting my friend...)", text: $storyTitle)
@@ -631,21 +723,29 @@ public struct CreatorView: View {
     // MARK: - Voice, Pacing & B-Roll Controls Card
     private var controlsGlassCard: some View {
         VStack(spacing: 12) {
-            // Voice Row
+            // Voice Row with Audio Preview
             controlRow(title: "Voice Actor", icon: "waveform") {
-                Picker("Voice", selection: $selectedVoice) {
-                    Text("✨ AI Auto-Select").tag("auto")
-                    Text("Samantha (Natural US)").tag("en-US-Samantha")
-                    Text("Daniel (British Narrator)").tag("en-GB-Daniel")
-                    Text("Arthur (Deep & Clear)").tag("en-US-Arthur")
-                    Text("Karen (Australian)").tag("en-AU-Karen")
-                    Text("Fred (Punchy Retro)").tag("en-US-Fred")
-                    Text("Christopher (Deep Cloud)").tag("en-US-ChristopherNeural")
-                    Text("Guy (Energetic Cloud)").tag("en-US-GuyNeural")
-                    Text("Jenny (Female Cloud)").tag("en-US-JennyNeural")
+                HStack(spacing: 8) {
+                    Picker("Voice", selection: $selectedVoice) {
+                        Text("✨ AI Auto-Select").tag("auto")
+                        Text("Samantha (Natural US)").tag("en-US-Samantha")
+                        Text("Daniel (British Narrator)").tag("en-GB-Daniel")
+                        Text("Arthur (Deep & Clear)").tag("en-US-Arthur")
+                        Text("Karen (Australian)").tag("en-AU-Karen")
+                        Text("Fred (Punchy Retro)").tag("en-US-Fred")
+                        Text("Christopher (Deep Cloud)").tag("en-US-ChristopherNeural")
+                        Text("Guy (Energetic Cloud)").tag("en-US-GuyNeural")
+                        Text("Jenny (Female Cloud)").tag("en-US-JennyNeural")
+                    }
+                    .pickerStyle(.menu)
+                    .tint(themeManager.currentTheme.accentColor)
+
+                    Button(action: toggleVoicePreview) {
+                        Image(systemName: isPlayingVoicePreview ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(isPlayingVoicePreview ? .red : themeManager.currentTheme.accentColor)
+                    }
                 }
-                .pickerStyle(.menu)
-                .tint(themeManager.currentTheme.accentColor)
             }
 
             Divider().background(Color.white.opacity(0.08))
@@ -665,6 +765,42 @@ public struct CreatorView: View {
 
             Divider().background(Color.white.opacity(0.08))
 
+            // Background Music & Audio Ducking
+            controlRow(title: "Atmosphere Music", icon: "music.note") {
+                Picker("BGM", selection: $selectedBgMusic) {
+                    Text("✨ Cinematic Ambient Glow").tag("cinematic_ambient")
+                    Text("⚡ Dramatic Suspense").tag("dramatic_suspense")
+                    Text("🔥 Viral Synth Pulse").tag("viral_pulse")
+                    Text("🔇 None (Narration Only)").tag("none")
+                }
+                .pickerStyle(.menu)
+                .tint(themeManager.currentTheme.accentColor)
+            }
+
+            // Audio Mixing Dual Sliders
+            VStack(spacing: 6) {
+                HStack {
+                    Text("Voiceover: \(Int(voiceVolume * 100))%")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(themeManager.currentTheme.textSecondary)
+                    Slider(value: $voiceVolume, in: 0.5...1.5, step: 0.05)
+                        .tint(themeManager.currentTheme.accentColor)
+                }
+
+                if selectedBgMusic != "none" {
+                    HStack {
+                        Text("Music Duck: \(Int(bgMusicVolume * 100))%")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(themeManager.currentTheme.textSecondary)
+                        Slider(value: $bgMusicVolume, in: 0.0...0.40, step: 0.02)
+                            .tint(themeManager.currentTheme.accentColor)
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+
+            Divider().background(Color.white.opacity(0.08))
+
             // Subtitle Style Row
             controlRow(title: "Subtitle Color", icon: "captions.bubble.fill") {
                 Picker("Style", selection: $selectedColor) {
@@ -674,6 +810,27 @@ public struct CreatorView: View {
                     Text("Neon Lime Green").tag("&H00FF00&")
                     Text("Electric Cyan").tag("&HFFFF00&")
                     Text("Hot Coral Red").tag("&H0000FF&")
+                }
+                .pickerStyle(.menu)
+                .tint(themeManager.currentTheme.accentColor)
+            }
+
+            // Subtitle Position & Typography Size
+            controlRow(title: "Subtitle Placement", icon: "arrow.up.and.down.and.sparkles") {
+                Picker("Position", selection: $subtitlePosition) {
+                    Text("Lower Third (TikTok Safe)").tag("lower")
+                    Text("Center Screen (Focus)").tag("center")
+                    Text("Upper Screen").tag("upper")
+                }
+                .pickerStyle(.menu)
+                .tint(themeManager.currentTheme.accentColor)
+            }
+
+            controlRow(title: "Subtitle Font Size", icon: "textformat.size") {
+                Picker("Font Size", selection: $subtitleFontSize) {
+                    Text("Standard (52pt)").tag(52.0)
+                    Text("Large (64pt)").tag(64.0)
+                    Text("Giant (76pt)").tag(76.0)
                 }
                 .pickerStyle(.menu)
                 .tint(themeManager.currentTheme.accentColor)
@@ -936,6 +1093,43 @@ public struct CreatorView: View {
         }
     }
 
+    private func toggleStorySplit() {
+        if storyParts != nil {
+            storyParts = nil
+        } else {
+            let parts = ViralStoryIntelligence.shared.splitStoryIntoParts(title: storyTitle, story: storyText)
+            if parts.isSplittable {
+                self.storyParts = parts
+                selectPart(1, parts)
+            }
+        }
+    }
+
+    private func selectPart(_ part: Int, _ parts: StoryParts) {
+        activePart = part
+        if part == 1 {
+            self.storyTitle = parts.part1Title
+            self.storyText = parts.part1Story
+        } else {
+            self.storyTitle = parts.part2Title
+            self.storyText = parts.part2Story
+        }
+        triggerAnalysis()
+    }
+
+    private func toggleVoicePreview() {
+        if isPlayingVoicePreview {
+            NativeSpeechService.shared.stopVoicePreview()
+            isPlayingVoicePreview = false
+        } else {
+            isPlayingVoicePreview = true
+            NativeSpeechService.shared.previewVoice(voiceId: selectedVoice)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+                isPlayingVoicePreview = false
+            }
+        }
+    }
+
     private func startGeneration() {
         errorMessage = nil
         Task {
@@ -947,7 +1141,12 @@ public struct CreatorView: View {
                     rate: selectedRate,
                     background: selectedBackground,
                     subtitleStyle: "auto",
-                    highlightColor: selectedColor
+                    highlightColor: selectedColor,
+                    subtitlePosition: subtitlePosition,
+                    fontSize: subtitleFontSize,
+                    bgMusic: selectedBgMusic,
+                    voiceVolume: voiceVolume,
+                    bgMusicVolume: bgMusicVolume
                 )
                 self.generatedResult = res
             } catch {

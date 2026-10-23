@@ -211,8 +211,9 @@ class VideoGenerator:
 
         # Social Metadata
         safe_title = title.replace('"', '')
-        caption = f"{safe_title} 🤯 What would you do in this situation? Let me know in the comments! 👇"
-        hashtags = "#fyp #storytime #redditstories #aita #viral #tiktok #trending #storytelling"
+        tags_list = self.ai_generator.generate_viral_hashtags(title, story_text)
+        hashtags = " ".join(tags_list)
+        caption = f"{safe_title} 🤯 What would you do in this situation? Let me know in the comments! 👇\n\n{hashtags}"
 
         return {
             "job_id": job_id,

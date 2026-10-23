@@ -376,14 +376,147 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("click", (e) => {
         if (e.target === themeModal) themeModal.classList.remove("open");
         if (e.target === connectModal) connectModal.classList.remove("open");
+        if (typeof hookModal !== "undefined" && e.target === hookModal) hookModal.classList.remove("open");
     });
 
     window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             if (themeModal) themeModal.classList.remove("open");
             if (connectModal) connectModal.classList.remove("open");
+            if (typeof hookModal !== "undefined" && hookModal) hookModal.classList.remove("open");
         }
     });
+
+    // VIRAL HOOK DOCTOR
+    const hookModal = document.getElementById("hook-doctor-modal");
+    const btnOpenHookDoctor = document.getElementById("btn-open-hook-doctor");
+    const btnCloseHookDoctor = document.getElementById("btn-close-hook-doctor");
+    const hookCardsList = document.getElementById("hook-cards-list");
+
+    if (btnOpenHookDoctor && hookModal) {
+        btnOpenHookDoctor.addEventListener("click", async () => {
+            const title = storyTitleInput.value.trim();
+            const story = storyTextInput.value.trim();
+            if (!story) return alert("Please select or enter a story first!");
+
+            hookCardsList.innerHTML = "<p class='empty-text'>Analyzing story & generating viral hooks...</p>";
+            hookModal.classList.add("open");
+
+            try {
+                const res = await fetch("/api/ai/hook-doctor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, story })
+                });
+                const data = await res.json();
+                if (data.status === "success" && data.hooks) {
+                    hookCardsList.innerHTML = data.hooks.map(h => `
+                        <div class="hook-card">
+                            <div class="hook-card-header">
+                                <span class="hook-card-style">${h.style}</span>
+                                <span class="hook-badge">${h.badge}</span>
+                            </div>
+                            <div class="hook-card-title">"${h.hook_title}"</div>
+                            <div class="hook-card-body">${h.hook_opening}</div>
+                            <div class="hook-card-footer">
+                                <span class="hook-card-strategy">💡 ${h.viral_strategy}</span>
+                                <button class="btn-apply-hook" data-title="${encodeURIComponent(h.hook_title)}" data-opening="${encodeURIComponent(h.hook_opening)}">
+                                    Apply Hook
+                                </button>
+                            </div>
+                        </div>
+                    `).join("");
+
+                    hookCardsList.querySelectorAll(".btn-apply-hook").forEach(btn => {
+                        btn.addEventListener("click", () => {
+                            const newTitle = decodeURIComponent(btn.dataset.title);
+                            const newOpening = decodeURIComponent(btn.dataset.opening);
+                            storyTitleInput.value = newTitle;
+                            if (!storyTextInput.value.toLowerCase().includes(newOpening.toLowerCase().substring(0, 25))) {
+                                storyTextInput.value = `${newOpening}\n\n${storyTextInput.value}`;
+                            }
+                            updateWordCount();
+                            hookModal.classList.remove("open");
+                        });
+                    });
+                }
+            } catch (err) {
+                hookCardsList.innerHTML = `<p class='empty-text'>Error generating hooks: ${err}</p>`;
+            }
+        });
+    }
+
+    if (btnCloseHookDoctor && hookModal) {
+        btnCloseHookDoctor.addEventListener("click", () => {
+            hookModal.classList.remove("open");
+        });
+    }
+
+    // MULTI-PART STORY SPLITTER
+    let activeStoryParts = null;
+    const btnSplitStory = document.getElementById("btn-split-story");
+    const storyPartsBar = document.getElementById("story-parts-bar");
+    const btnPart1 = document.getElementById("btn-part-1");
+    const btnPart2 = document.getElementById("btn-part-2");
+
+    if (btnSplitStory) {
+        btnSplitStory.addEventListener("click", async () => {
+            if (activeStoryParts) {
+                activeStoryParts = null;
+                storyPartsBar.style.display = "none";
+                btnSplitStory.innerText = "✂️ Split Parts";
+                return;
+            }
+            const title = storyTitleInput.value.trim();
+            const story = storyTextInput.value.trim();
+            if (!story) return alert("Please select or enter a story first!");
+
+            try {
+                const res = await fetch("/api/ai/split-story", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, story })
+                });
+                const data = await res.json();
+                if (data.status === "success" && data.parts && data.parts.is_splittable) {
+                    activeStoryParts = data.parts;
+                    storyPartsBar.style.display = "flex";
+                    btnSplitStory.innerText = "✕ Merge Parts";
+
+                    // Default to Part 1
+                    storyTitleInput.value = activeStoryParts.part1_title;
+                    storyTextInput.value = activeStoryParts.part1_story;
+                    btnPart1.classList.add("active");
+                    btnPart2.classList.remove("active");
+                    updateWordCount();
+                } else {
+                    alert("Story is too short to split into two parts (< 70 words).");
+                }
+            } catch (e) {
+                alert("Split error: " + e);
+            }
+        });
+    }
+
+    if (btnPart1 && btnPart2) {
+        btnPart1.addEventListener("click", () => {
+            if (!activeStoryParts) return;
+            btnPart1.classList.add("active");
+            btnPart2.classList.remove("active");
+            storyTitleInput.value = activeStoryParts.part1_title;
+            storyTextInput.value = activeStoryParts.part1_story;
+            updateWordCount();
+        });
+
+        btnPart2.addEventListener("click", () => {
+            if (!activeStoryParts) return;
+            btnPart2.classList.add("active");
+            btnPart1.classList.remove("active");
+            storyTitleInput.value = activeStoryParts.part2_title;
+            storyTextInput.value = activeStoryParts.part2_story;
+            updateWordCount();
+        });
+    }
 
     // 1. REDDIT SCRAPER
     async function fetchRedditStories() {
