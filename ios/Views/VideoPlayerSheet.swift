@@ -4,6 +4,7 @@ import AVKit
 public struct VideoPlayerSheet: View {
     public let result: GenerationResult
     @ObservedObject var api = StoryTellerAPIService.shared
+    @ObservedObject private var themeManager = AppThemeManager.shared
     @Environment(\.dismiss) var dismiss
 
     @State private var player: AVPlayer?
@@ -41,9 +42,9 @@ public struct VideoPlayerSheet: View {
                                         .strokeBorder(
                                             LinearGradient(
                                                 colors: [
-                                                    Color.cyan.opacity(0.6),
-                                                    Color.purple.opacity(0.3),
-                                                    Color.white.opacity(0.1)
+                                                    BayanTokens.gold.opacity(0.70),
+                                                    BayanTokens.goldSoft.opacity(0.35),
+                                                    Color.white.opacity(0.10)
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
@@ -52,13 +53,13 @@ public struct VideoPlayerSheet: View {
                                         )
                                 )
                                 .shadow(color: Color.black.opacity(0.5), radius: 24, y: 12)
-                                .shadow(color: Color.cyan.opacity(0.2), radius: 30, y: 4)
+                                .shadow(color: themeManager.currentTheme.accentColor.opacity(0.2), radius: 30, y: 4)
                         } else {
                             Rectangle()
                                 .fill(Color.black.opacity(0.5))
                                 .aspectRatio(9/16, contentMode: .fit)
                                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                                .overlay(ProgressView().tint(.cyan))
+                                .overlay(ProgressView().tint(themeManager.currentTheme.accentColor))
                         }
                     }
                     .padding(.horizontal, 28)
@@ -70,7 +71,7 @@ public struct VideoPlayerSheet: View {
                         Button(action: saveToCameraRoll) {
                             HStack(spacing: 8) {
                                 if isSaving {
-                                    ProgressView().tint(.black)
+                                    ProgressView().tint(themeManager.currentTheme.ctaTextColor)
                                 } else {
                                     Image(systemName: "checkmark.seal.fill")
                                         .font(.system(size: 16, weight: .bold))
@@ -80,19 +81,10 @@ public struct VideoPlayerSheet: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0.0, green: 0.95, blue: 0.6),
-                                        Color(red: 0.0, green: 0.85, blue: 1.0)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .foregroundColor(.black)
+                            .background(themeManager.currentTheme.ctaGradient)
+                            .foregroundColor(themeManager.currentTheme.ctaTextColor)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: Color.green.opacity(0.35), radius: 10, y: 4)
+                            .shadow(color: themeManager.currentTheme.accentColor.opacity(0.35), radius: 10, y: 4)
                         }
                         .disabled(isSaving)
                         .buttonStyle(LiquidGlassButtonStyle())
@@ -108,15 +100,15 @@ public struct VideoPlayerSheet: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 13)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.currentTheme.textPrimary)
                                 .background(
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                                             .fill(.ultraThinMaterial)
                                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .fill(Color(red: 0.12, green: 0.15, blue: 0.24).opacity(0.85))
+                                            .fill(themeManager.currentTheme.cardBackground)
                                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                                            .strokeBorder(themeManager.currentTheme.cardStroke, lineWidth: 1)
                                     }
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -132,7 +124,7 @@ public struct VideoPlayerSheet: View {
                                 Text(isCopied ? "Copied to Clipboard!" : "Copy Caption & Viral Tags")
                                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                             }
-                            .foregroundColor(.cyan)
+                            .foregroundColor(themeManager.currentTheme.accentColor)
                             .padding(.vertical, 6)
                         }
                     }
@@ -150,7 +142,7 @@ public struct VideoPlayerSheet: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 22))
-                            .foregroundColor(.white.opacity(0.75))
+                            .foregroundColor(themeManager.currentTheme.textPrimary.opacity(0.75))
                     }
                 }
             }
@@ -188,7 +180,9 @@ public struct VideoPlayerSheet: View {
             do {
                 try await api.saveVideoToCameraRoll(videoRelativeURL: url.absoluteString)
                 saveMessage = "SAVED TO PHOTOS! ✅"
+                #if os(iOS)
                 UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                #endif
             } catch {
                 saveMessage = "Error: \(error.localizedDescription)"
             }
@@ -200,7 +194,9 @@ public struct VideoPlayerSheet: View {
         let full = "\(result.caption)\n\n\(result.hashtags)"
         UIPasteboard.general.string = full
         isCopied = true
+        #if os(iOS)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #endif
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             isCopied = false
         }

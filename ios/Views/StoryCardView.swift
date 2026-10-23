@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct StoryCardView: View {
+    @ObservedObject private var themeManager = AppThemeManager.shared
     public let story: Story
     public let isSelected: Bool
     public let onSelect: () -> Void
@@ -14,18 +15,20 @@ public struct StoryCardView: View {
     public var body: some View {
         Button(action: {
             onSelect()
+            #if os(iOS)
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            #endif
         }) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(story.title)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.currentTheme.textPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
                 Text(story.story)
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.65))
+                    .foregroundColor(themeManager.currentTheme.textSecondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
@@ -33,32 +36,32 @@ public struct StoryCardView: View {
                     if let sub = story.subreddit {
                         Text(sub.hasPrefix("r/") ? sub : "r/\(sub)")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(themeManager.currentTheme.accentColor)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.cyan.opacity(0.12))
+                            .background(themeManager.currentTheme.accentColor.opacity(0.12))
                             .cornerRadius(6)
                     } else if let topic = story.topic {
                         Text(topic)
                             .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundColor(.purple)
+                            .foregroundColor(BayanTokens.gold)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.purple.opacity(0.12))
+                            .background(BayanTokens.gold.opacity(0.12))
                             .cornerRadius(6)
                     }
 
                     if let up = story.upvotes {
                         Text("🔥 \(up)")
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.gray)
+                            .foregroundColor(themeManager.currentTheme.textSecondary)
                     }
 
                     Spacer()
 
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right.circle")
                         .font(.system(size: 13))
-                        .foregroundColor(isSelected ? .cyan : .gray.opacity(0.5))
+                        .foregroundColor(isSelected ? themeManager.currentTheme.accentColor : themeManager.currentTheme.textSecondary.opacity(0.5))
                 }
             }
             .padding(12)
@@ -67,22 +70,21 @@ public struct StoryCardView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(.ultraThinMaterial)
-                        .opacity(0.7)
 
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(isSelected ? Color.cyan.opacity(0.14) : Color(red: 0.10, green: 0.12, blue: 0.18).opacity(0.75))
+                        .fill(isSelected ? themeManager.currentTheme.accentColor.opacity(0.15) : themeManager.currentTheme.cardBackground)
 
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .strokeBorder(
                             isSelected ?
-                                LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing) :
-                                LinearGradient(colors: [Color.white.opacity(0.2), Color.white.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: isSelected ? 1.6 : 1.0
+                                (themeManager.currentTheme.isDark ? BayanTokens.glassGoldStroke : themeManager.currentTheme.cardStroke) :
+                                LinearGradient(colors: [Color.white.opacity(0.15), Color.white.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: isSelected ? 1.8 : 1.0
                         )
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: isSelected ? Color.cyan.opacity(0.2) : Color.black.opacity(0.25), radius: 8, y: 4)
+            .shadow(color: isSelected ? themeManager.currentTheme.accentColor.opacity(0.25) : Color.black.opacity(0.20), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
     }

@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct GalleryView: View {
     @ObservedObject var api = StoryTellerAPIService.shared
+    @ObservedObject private var themeManager = AppThemeManager.shared
     @State private var videos: [GalleryVideo] = []
     @State private var isLoading: Bool = false
     @State private var selectedVideo: GenerationResult?
@@ -11,35 +12,36 @@ public struct GalleryView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Liquid Mesh Background
+                // Theme Ambient Background
                 LiquidMeshBackground()
 
                 if isLoading {
-                    ProgressView().tint(.cyan)
+                    ProgressView()
+                        .tint(themeManager.currentTheme.accentColor)
                 } else if videos.isEmpty {
                     VStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .fill(Color.cyan.opacity(0.12))
+                                .fill(themeManager.currentTheme.accentColor.opacity(0.12))
                                 .frame(width: 80, height: 80)
                                 .blur(radius: 6)
                             Image(systemName: "film.stack")
                                 .font(.system(size: 38))
-                                .foregroundColor(.cyan)
+                                .foregroundColor(themeManager.currentTheme.accentColor)
                         }
 
                         Text("No Videos Generated Yet")
                             .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.currentTheme.textPrimary)
 
                         Text("Create your first viral video right on your iPhone!")
                             .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.65))
+                            .foregroundColor(themeManager.currentTheme.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
                     .padding(32)
-                    .liquidGlassCard(cornerRadius: 24)
+                    .liquidGlassCard(cornerRadius: 24, isGoldBorder: true)
                     .padding(.horizontal, 24)
                 } else {
                     ScrollView(showsIndicators: false) {
@@ -58,37 +60,37 @@ public struct GalleryView: View {
                                         ai_match: nil,
                                         localFileURL: vid.url.starts(with: "file://") ? vid.url : nil
                                     )
+                                    #if os(iOS)
                                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    #endif
                                 }) {
                                     HStack(spacing: 14) {
                                         // Video Thumbnail Glass Container
                                         ZStack {
                                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                .fill(Color(red: 0.12, green: 0.16, blue: 0.24))
+                                                .fill(themeManager.currentTheme.cardBackground)
                                                 .frame(width: 64, height: 86)
 
                                             Image(systemName: "play.circle.fill")
                                                 .font(.system(size: 28))
-                                                .foregroundStyle(
-                                                    LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                                )
-                                                .shadow(color: Color.cyan.opacity(0.4), radius: 6)
+                                                .foregroundStyle(themeManager.currentTheme.ctaGradient)
+                                                .shadow(color: themeManager.currentTheme.accentColor.opacity(0.4), radius: 6)
                                         }
 
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text(vid.filename.replacingOccurrences(of: ".mp4", with: ""))
                                                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(themeManager.currentTheme.textPrimary)
                                                 .lineLimit(2)
                                                 .multilineTextAlignment(.leading)
 
                                             HStack(spacing: 8) {
                                                 Text("\(String(format: "%.1f", vid.size_mb)) MB")
                                                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(themeManager.currentTheme.textSecondary)
 
                                                 if vid.url.starts(with: "file://") {
-                                                    LiquidGlassPill(text: "On-Device", icon: "iphone", tintColor: .cyan)
+                                                    LiquidGlassPill(text: "On-Device", icon: "iphone", isGold: true)
                                                 }
                                             }
                                         }
@@ -97,7 +99,7 @@ public struct GalleryView: View {
 
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(.white.opacity(0.4))
+                                            .foregroundColor(themeManager.currentTheme.textSecondary.opacity(0.6))
                                     }
                                     .padding(12)
                                     .liquidGlassCard(cornerRadius: 18)
@@ -105,8 +107,8 @@ public struct GalleryView: View {
                                 .buttonStyle(.plain)
                             }
 
-                            // Extra bottom padding for floating tab bar
-                            Spacer(minLength: 90)
+                            // Extra bottom padding for floating capsule dock
+                            Spacer(minLength: 100)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
@@ -120,7 +122,7 @@ public struct GalleryView: View {
                     Button(action: refreshGallery) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(themeManager.currentTheme.accentColor)
                     }
                 }
             }

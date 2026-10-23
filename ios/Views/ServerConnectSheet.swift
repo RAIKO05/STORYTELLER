@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct ServerConnectSheet: View {
     @ObservedObject var api = StoryTellerAPIService.shared
+    @ObservedObject private var themeManager = AppThemeManager.shared
     @State private var inputHost: String = ""
     @State private var isTesting: Bool = false
     @State private var testResult: String?
@@ -12,7 +13,7 @@ public struct ServerConnectSheet: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Liquid Mesh Background
+                // Theme Ambient Background
                 LiquidMeshBackground()
 
                 ScrollView(showsIndicators: false) {
@@ -26,24 +27,24 @@ public struct ServerConnectSheet: View {
 
                             Text(api.isConnected ? "Connected to Host PC Studio" : "Standalone / Disconnected")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.currentTheme.textPrimary)
 
                             Spacer()
 
                             LiquidGlassPill(
                                 text: api.runMode == .onDevice ? "Standalone" : "Remote",
                                 icon: api.runMode == .onDevice ? "bolt.shield.fill" : "network",
-                                tintColor: api.runMode == .onDevice ? .cyan : .purple
+                                isGold: api.runMode == .onDevice
                             )
                         }
                         .padding(14)
-                        .liquidGlassCard(cornerRadius: 18)
+                        .liquidGlassCard(cornerRadius: 18, isGoldBorder: true)
 
                         // Manual Host Input Card
                         VStack(alignment: .leading, spacing: 10) {
                             Text("HOST PC STUDIO ADDRESS")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundColor(.cyan)
+                                .foregroundColor(themeManager.currentTheme.accentColor)
                                 .tracking(0.5)
 
                             HStack {
@@ -53,15 +54,15 @@ public struct ServerConnectSheet: View {
                                     .textInputAutocapitalization(.never)
                                     .font(.system(size: 13))
                                     .padding(12)
-                                    .background(Color.black.opacity(0.35))
+                                    .background(Color.black.opacity(0.30))
                                     .cornerRadius(12)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.currentTheme.textPrimary)
                                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.1), lineWidth: 1))
 
                                 Button(action: testConnection) {
                                     HStack {
                                         if isTesting {
-                                            ProgressView().tint(.black)
+                                            ProgressView().tint(themeManager.currentTheme.ctaTextColor)
                                         } else {
                                             Text("Connect")
                                                 .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -69,17 +70,15 @@ public struct ServerConnectSheet: View {
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 12)
-                                    .background(
-                                        LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    )
-                                    .foregroundColor(.black)
+                                    .background(themeManager.currentTheme.ctaGradient)
+                                    .foregroundColor(themeManager.currentTheme.ctaTextColor)
                                     .cornerRadius(12)
                                 }
                             }
 
                             Text("Connect your iPhone and PC to the same Wi-Fi network to enable two-way sync.")
                                 .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(themeManager.currentTheme.textSecondary)
                         }
                         .padding(16)
                         .liquidGlassCard(cornerRadius: 22)
@@ -88,7 +87,7 @@ public struct ServerConnectSheet: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("DETECTED LOCAL PRESETS")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundColor(.cyan)
+                                .foregroundColor(themeManager.currentTheme.accentColor)
                                 .tracking(0.5)
 
                             Button(action: {
@@ -98,18 +97,18 @@ public struct ServerConnectSheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "wifi")
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.cyan)
+                                        .foregroundColor(themeManager.currentTheme.accentColor)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Local Wi-Fi PC Studio")
                                             .font(.system(size: 13, weight: .bold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(themeManager.currentTheme.textPrimary)
                                         Text("192.168.11.146:8000")
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(themeManager.currentTheme.textSecondary)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(themeManager.currentTheme.textSecondary)
                                 }
                                 .padding(12)
                                 .liquidGlassCard(cornerRadius: 14)
@@ -123,18 +122,18 @@ public struct ServerConnectSheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "laptopcomputer")
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.purple)
+                                        .foregroundColor(BayanTokens.gold)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Simulator / Localhost")
                                             .font(.system(size: 13, weight: .bold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(themeManager.currentTheme.textPrimary)
                                         Text("localhost:8000")
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(themeManager.currentTheme.textSecondary)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(themeManager.currentTheme.textSecondary)
                                 }
                                 .padding(12)
                                 .liquidGlassCard(cornerRadius: 14)
@@ -150,14 +149,14 @@ public struct ServerConnectSheet: View {
                                     .foregroundColor(res.contains("Success") ? .green : .orange)
                                 Text(res)
                                     .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.currentTheme.textPrimary)
                             }
                             .padding(12)
                             .liquidGlassCard(cornerRadius: 14)
                         }
 
-                        // Extra bottom spacing for floating tab bar
-                        Spacer(minLength: 90)
+                        // Extra bottom spacing for floating capsule dock
+                        Spacer(minLength: 100)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 14)
@@ -171,7 +170,7 @@ public struct ServerConnectSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.cyan)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                 }
             }
             .onAppear {
@@ -190,7 +189,9 @@ public struct ServerConnectSheet: View {
             isTesting = false
             if ok {
                 testResult = "Successfully connected to StoryTeller PC Studio!"
+                #if os(iOS)
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                #endif
             } else {
                 testResult = "Could not reach PC server. Please ensure both devices are on the same Wi-Fi and the python studio is running."
             }

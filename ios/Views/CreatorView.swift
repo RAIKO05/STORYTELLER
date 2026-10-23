@@ -20,6 +20,7 @@ public struct MovieFile: Transferable {
 
 public struct CreatorView: View {
     @ObservedObject var api = StoryTellerAPIService.shared
+    @ObservedObject private var themeManager = AppThemeManager.shared
 
     // Story Source Selection
     enum SourceType: String, CaseIterable, Identifiable {
@@ -79,6 +80,7 @@ public struct CreatorView: View {
 
     // Generation & Sheets
     @State private var showConnectSheet: Bool = false
+    @State private var showThemeSheet: Bool = false
     @State private var generatedResult: GenerationResult?
     @State private var errorMessage: String?
     @State private var isLoadingSource: Bool = false
@@ -88,7 +90,7 @@ public struct CreatorView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // 1. Ambient Liquid Mesh Background
+                // 1. Ambient Dynamic Mesh Canvas
                 LiquidMeshBackground()
 
                 // 2. Main Scrollable Content
@@ -120,8 +122,8 @@ public struct CreatorView: View {
                         // CTA Section
                         generateSection
 
-                        // Extra bottom spacing for the floating tab bar
-                        Spacer(minLength: 90)
+                        // Extra bottom spacing for floating capsule dock
+                        Spacer(minLength: 100)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -134,31 +136,54 @@ public struct CreatorView: View {
                         Image(systemName: "film.stack.fill")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(
-                                LinearGradient(colors: [Color.cyan, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                LinearGradient(
+                                    colors: [themeManager.currentTheme.accentColor, BayanTokens.goldSoft],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
                         Text("StoryTeller")
                             .font(.system(size: 18, weight: .heavy, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.currentTheme.textPrimary)
+
                         if let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                             Text("v\(v)")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(.cyan.opacity(0.85))
+                                .foregroundColor(themeManager.currentTheme.accentColor)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.cyan.opacity(0.12)))
+                                .background(Capsule().fill(themeManager.currentTheme.accentColor.opacity(0.15)))
+                                .overlay(Capsule().stroke(themeManager.currentTheme.accentColor.opacity(0.3), lineWidth: 0.8))
                         }
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { showConnectSheet = true }) {
-                        LiquidGlassPill(
-                            text: api.runMode == .onDevice ? "Standalone" : (api.isConnected ? "Connected" : "Connect PC"),
-                            icon: api.runMode == .onDevice ? "bolt.shield.fill" : (api.isConnected ? "wifi" : "wifi.exclamationmark"),
-                            tintColor: api.runMode == .onDevice ? .cyan : (api.isConnected ? .green : .orange)
-                        )
+                    HStack(spacing: 8) {
+                        // Theme Switcher Button
+                        Button(action: { showThemeSheet = true }) {
+                            Image(systemName: "paintpalette.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(themeManager.currentTheme.accentColor)
+                                .padding(8)
+                                .background(Circle().fill(.ultraThinMaterial))
+                                .overlay(Circle().stroke(BayanTokens.glassGoldStroke, lineWidth: 1))
+                        }
+
+                        // Standalone Status Pill
+                        Button(action: { showConnectSheet = true }) {
+                            LiquidGlassPill(
+                                text: api.runMode == .onDevice ? "Standalone" : (api.isConnected ? "Connected" : "Connect PC"),
+                                icon: api.runMode == .onDevice ? "bolt.shield.fill" : (api.isConnected ? "wifi" : "wifi.exclamationmark"),
+                                tintColor: api.runMode == .onDevice ? themeManager.currentTheme.accentColor : (api.isConnected ? .green : .orange),
+                                isGold: api.runMode == .onDevice
+                            )
+                        }
                     }
                 }
+            }
+            .sheet(isPresented: $showThemeSheet) {
+                ThemePickerSheet()
             }
             .sheet(isPresented: $showConnectSheet) {
                 ServerConnectSheet()
@@ -186,16 +211,16 @@ public struct CreatorView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("AI VIDEO CREATOR")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                     .tracking(1.0)
                 Text("Viral TikTok & Shorts Studio")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.currentTheme.textPrimary)
             }
 
             Spacer()
 
-            LiquidGlassPill(text: "9:16 Vertical", icon: "iphone.gen3", tintColor: .purple)
+            LiquidGlassPill(text: "9:16 Vertical", icon: "iphone.gen3", isGold: true)
         }
         .padding(.vertical, 4)
     }
@@ -212,9 +237,9 @@ public struct CreatorView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.ultraThinMaterial)
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.8))
+                    .fill(themeManager.currentTheme.cardBackground)
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                    .strokeBorder(themeManager.currentTheme.cardStroke, lineWidth: 1)
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -232,10 +257,10 @@ public struct CreatorView: View {
             VStack(spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: isSelected ? .bold : .medium, design: .rounded))
-                    .foregroundColor(isSelected ? .black : .white.opacity(0.8))
+                    .foregroundColor(isSelected ? themeManager.currentTheme.ctaTextColor : themeManager.currentTheme.textPrimary.opacity(0.85))
                 Text(subtitle)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(isSelected ? .black.opacity(0.75) : .gray)
+                    .foregroundColor(isSelected ? themeManager.currentTheme.ctaTextColor.opacity(0.8) : themeManager.currentTheme.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -243,10 +268,8 @@ public struct CreatorView: View {
                 Group {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(
-                                LinearGradient(colors: [Color.cyan, Color(red: 0.4, green: 0.7, blue: 1.0)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .shadow(color: Color.cyan.opacity(0.35), radius: 6, y: 2)
+                            .fill(themeManager.currentTheme.ctaGradient)
+                            .shadow(color: themeManager.currentTheme.accentColor.opacity(0.35), radius: 6, y: 2)
                     } else {
                         Color.clear
                     }
@@ -275,25 +298,22 @@ public struct CreatorView: View {
                             Text(src.rawValue)
                                 .font(.system(size: 12, weight: isSelected ? .bold : .semibold, design: .rounded))
                         }
-                        .foregroundColor(isSelected ? .black : .white.opacity(0.85))
+                        .foregroundColor(isSelected ? themeManager.currentTheme.ctaTextColor : themeManager.currentTheme.textPrimary.opacity(0.85))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(
                             ZStack {
                                 if isSelected {
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(
-                                            LinearGradient(colors: [Color.cyan, Color(red: 0.2, green: 0.8, blue: 1.0)], startPoint: .leading, endPoint: .trailing)
-                                        )
-                                        .shadow(color: Color.cyan.opacity(0.4), radius: 8, y: 3)
+                                        .fill(themeManager.currentTheme.ctaGradient)
+                                        .shadow(color: themeManager.currentTheme.accentColor.opacity(0.35), radius: 8, y: 3)
                                 } else {
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                                         .fill(.ultraThinMaterial)
-                                        .opacity(0.8)
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color(red: 0.10, green: 0.12, blue: 0.18).opacity(0.7))
+                                        .fill(themeManager.currentTheme.cardBackground)
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                                        .strokeBorder(themeManager.currentTheme.cardStroke, lineWidth: 1)
                                 }
                             }
                         )
@@ -330,13 +350,13 @@ public struct CreatorView: View {
     private var curatedStoriesSubView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("🔥 Top 5 High-Retention Scripts")
+                Text("🔥 Top High-Retention Scripts")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                 Spacer()
                 Text("1-Tap Select")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.gray)
+                    .foregroundColor(themeManager.currentTheme.textSecondary)
             }
 
             let stories = [
@@ -357,11 +377,11 @@ public struct CreatorView: View {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(item.1)
                                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.currentTheme.textPrimary)
                                     .lineLimit(1)
                                 Text(item.2)
                                     .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.65))
+                                    .foregroundColor(themeManager.currentTheme.textSecondary)
                                     .lineLimit(2)
                             }
                             .padding(10)
@@ -371,9 +391,9 @@ public struct CreatorView: View {
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                                         .fill(.ultraThinMaterial)
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color(red: 0.12, green: 0.15, blue: 0.22).opacity(0.8))
+                                        .fill(themeManager.currentTheme.cardBackground)
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+                                        .strokeBorder(themeManager.currentTheme.cardStroke, lineWidth: 1)
                                 }
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -384,7 +404,7 @@ public struct CreatorView: View {
             }
         }
         .padding(14)
-        .liquidGlassCard(cornerRadius: 20)
+        .liquidGlassCard(cornerRadius: 20, isGoldBorder: true)
     }
 
     // Reddit Subview
@@ -393,21 +413,21 @@ public struct CreatorView: View {
             HStack {
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
+                        .foregroundColor(themeManager.currentTheme.textSecondary)
                     TextField("Subreddit (e.g. AmItheAsshole)", text: $subreddit)
                         .font(.system(size: 13))
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.currentTheme.textPrimary)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
                 .padding(10)
-                .background(Color.black.opacity(0.35))
+                .background(Color.black.opacity(0.30))
                 .cornerRadius(10)
 
                 Button(action: loadRedditStories) {
                     HStack(spacing: 4) {
                         if isLoadingSource {
-                            ProgressView().tint(.black)
+                            ProgressView().tint(themeManager.currentTheme.ctaTextColor)
                         } else {
                             Image(systemName: "arrow.down.circle.fill")
                             Text("Scrub")
@@ -416,8 +436,8 @@ public struct CreatorView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .foregroundColor(.black)
+                    .background(themeManager.currentTheme.ctaGradient)
+                    .foregroundColor(themeManager.currentTheme.ctaTextColor)
                     .cornerRadius(10)
                 }
             }
@@ -444,7 +464,7 @@ public struct CreatorView: View {
             HStack {
                 Text("Select Category")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                 Spacer()
                 Picker("Theme", selection: $aiCategory) {
                     Text("🔥 AITA & Drama").tag("aita")
@@ -456,13 +476,13 @@ public struct CreatorView: View {
                     Text("🕵️ True Crime & Heists").tag("crime")
                 }
                 .pickerStyle(.menu)
-                .tint(.cyan)
+                .tint(themeManager.currentTheme.accentColor)
             }
 
             Button(action: generateAIStoryScript) {
                 HStack {
                     if isLoadingSource {
-                        ProgressView().tint(.black)
+                        ProgressView().tint(themeManager.currentTheme.ctaTextColor)
                         Text("Writing Viral Script...")
                     } else {
                         Image(systemName: "wand.and.stars")
@@ -472,14 +492,8 @@ public struct CreatorView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(
-                    LinearGradient(
-                        colors: [Color.cyan, Color(red: 0.3, green: 0.7, blue: 1.0)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .foregroundColor(.black)
+                .background(themeManager.currentTheme.ctaGradient)
+                .foregroundColor(themeManager.currentTheme.ctaTextColor)
                 .cornerRadius(12)
             }
         }
@@ -493,17 +507,17 @@ public struct CreatorView: View {
             TextField("Search topic (e.g. secret hacks)", text: $quoraQuery)
                 .font(.system(size: 13))
                 .padding(10)
-                .background(Color.black.opacity(0.35))
+                .background(Color.black.opacity(0.30))
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.currentTheme.textPrimary)
 
             Button(action: loadQuoraStories) {
                 Text("Search")
                     .font(.system(size: 13, weight: .bold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color.cyan)
-                    .foregroundColor(.black)
+                    .background(themeManager.currentTheme.ctaGradient)
+                    .foregroundColor(themeManager.currentTheme.ctaTextColor)
                     .cornerRadius(10)
             }
         }
@@ -517,17 +531,17 @@ public struct CreatorView: View {
             TextField("Paste YouTube URL", text: $youtubeURL)
                 .font(.system(size: 13))
                 .padding(10)
-                .background(Color.black.opacity(0.35))
+                .background(Color.black.opacity(0.30))
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.currentTheme.textPrimary)
 
             Button(action: loadYouTubeTranscript) {
                 Text("Get Script")
                     .font(.system(size: 13, weight: .bold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color.cyan)
-                    .foregroundColor(.black)
+                    .background(themeManager.currentTheme.ctaGradient)
+                    .foregroundColor(themeManager.currentTheme.ctaTextColor)
                     .cornerRadius(10)
             }
         }
@@ -541,9 +555,9 @@ public struct CreatorView: View {
             HStack {
                 Text("Story Script")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.currentTheme.textPrimary)
                 Spacer()
-                LiquidGlassPill(text: wordCountText, icon: "clock.fill", tintColor: .cyan)
+                LiquidGlassPill(text: wordCountText, icon: "clock.fill", isGold: true)
             }
 
             TextField("Title / Viral Hook (e.g. AITA for uninviting my friend...)", text: $storyTitle)
@@ -551,7 +565,7 @@ public struct CreatorView: View {
                 .padding(12)
                 .background(Color.black.opacity(0.30))
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.currentTheme.textPrimary)
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 .onChange(of: storyTitle) { _ in triggerAnalysis() }
 
@@ -562,12 +576,12 @@ public struct CreatorView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.black.opacity(0.30))
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.currentTheme.textPrimary)
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 .onChange(of: storyText) { _ in triggerAnalysis() }
         }
         .padding(16)
-        .liquidGlassCard(cornerRadius: 22)
+        .liquidGlassCard(cornerRadius: 22, isGoldBorder: true)
     }
 
     // MARK: - AI Match Holographic Glass Card
@@ -575,17 +589,17 @@ public struct CreatorView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "sparkles")
-                    .foregroundColor(.pink)
+                    .foregroundColor(BayanTokens.gold)
                 Text("AI Persona & Tone Match")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.pink)
+                    .foregroundColor(BayanTokens.gold)
                 Spacer()
-                LiquidGlassPill(text: match.vibe, icon: "waveform", tintColor: .pink)
+                LiquidGlassPill(text: match.vibe, icon: "waveform", isGold: true)
             }
 
             Text(match.rationale)
                 .font(.system(size: 11))
-                .foregroundColor(Color.white.opacity(0.85))
+                .foregroundColor(themeManager.currentTheme.textSecondary)
 
             HStack(spacing: 6) {
                 Label(match.voice_name, systemImage: "mic.fill")
@@ -609,23 +623,10 @@ public struct CreatorView: View {
                     .background(Color.white.opacity(0.08))
                     .cornerRadius(8)
             }
-            .foregroundColor(.white)
+            .foregroundColor(themeManager.currentTheme.textPrimary)
         }
         .padding(14)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(red: 0.16, green: 0.08, blue: 0.16).opacity(0.70))
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(colors: [Color.pink.opacity(0.6), Color.purple.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1.2
-                    )
-            }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .liquidGlassCard(cornerRadius: 18, isGoldBorder: true)
     }
 
     // MARK: - Voice, Pacing & B-Roll Controls Card
@@ -645,7 +646,7 @@ public struct CreatorView: View {
                     Text("Jenny (Female Cloud)").tag("en-US-JennyNeural")
                 }
                 .pickerStyle(.menu)
-                .tint(.cyan)
+                .tint(themeManager.currentTheme.accentColor)
             }
 
             Divider().background(Color.white.opacity(0.08))
@@ -660,7 +661,7 @@ public struct CreatorView: View {
                     Text("Hyper (+18%)").tag("+18%")
                 }
                 .pickerStyle(.menu)
-                .tint(.cyan)
+                .tint(themeManager.currentTheme.accentColor)
             }
 
             Divider().background(Color.white.opacity(0.08))
@@ -669,13 +670,14 @@ public struct CreatorView: View {
             controlRow(title: "Subtitle Color", icon: "captions.bubble.fill") {
                 Picker("Style", selection: $selectedColor) {
                     Text("✨ AI Auto-Style").tag("auto")
+                    Text("Royal Gold (Bayan)").tag("&H0061BDE6&")
                     Text("TikTok Yellow").tag("&H00FFFF&")
                     Text("Neon Lime Green").tag("&H00FF00&")
                     Text("Electric Cyan").tag("&HFFFF00&")
                     Text("Hot Coral Red").tag("&H0000FF&")
                 }
                 .pickerStyle(.menu)
-                .tint(.cyan)
+                .tint(themeManager.currentTheme.accentColor)
             }
 
             Divider().background(Color.white.opacity(0.08))
@@ -708,7 +710,7 @@ public struct CreatorView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .tint(.cyan)
+                .tint(themeManager.currentTheme.accentColor)
             }
 
             // Photos Picker Button
@@ -719,10 +721,10 @@ public struct CreatorView: View {
                         Text("Pick Video From iPhone Photos")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                     }
-                    .foregroundColor(.cyan)
+                    .foregroundColor(themeManager.currentTheme.accentColor)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color.cyan.opacity(0.12))
+                    .background(themeManager.currentTheme.accentColor.opacity(0.12))
                     .cornerRadius(10)
                 }
 
@@ -752,11 +754,11 @@ public struct CreatorView: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 13))
-                .foregroundColor(.cyan)
+                .foregroundColor(themeManager.currentTheme.accentColor)
                 .frame(width: 20)
             Text(title)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.currentTheme.textPrimary)
             Spacer()
             content()
         }
@@ -768,15 +770,15 @@ public struct CreatorView: View {
             if api.isGenerating {
                 VStack(spacing: 8) {
                     ProgressView(value: api.generationPercent, total: 1.0)
-                        .tint(.cyan)
+                        .tint(themeManager.currentTheme.accentColor)
                     HStack {
                         Text(api.generationProgressText)
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(themeManager.currentTheme.accentColor)
                         Spacer()
                         Text("\(Int(api.generationPercent * 100))%")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.currentTheme.textPrimary)
                     }
                 }
                 .padding(14)
