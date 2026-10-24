@@ -5,6 +5,9 @@ struct StoryTellerApp: App {
     @ObservedObject private var themeManager = AppThemeManager.shared
 
     init() {
+        // Enforce Automated Security Shield & Anti-Piracy Environment Verification
+        AppSecurityShield.shared.validateEnvironmentIntegrity()
+
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.titleTextAttributes = [.foregroundColor: UIColor.white]

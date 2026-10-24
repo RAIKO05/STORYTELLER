@@ -83,12 +83,24 @@ public class StoryTellerAPIService: ObservableObject {
         )
     }
 
+    // MARK: - Security & Anti-Piracy Attestation Request Builder
+    private func makeAuthorizedRequest(url: URL, method: String = "GET", body: Data? = nil, timeout: TimeInterval = 30) -> URLRequest {
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.timeoutInterval = timeout
+        if let body = body {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = body
+        }
+        AppSecurityShield.shared.signRequest(&req)
+        return req
+    }
+
     // MARK: - Server Ping Check (Remote PC Mode)
     public func pingServer() async -> Bool {
         guard let url = URL(string: "\(cleanBaseURL)/api/presets") else { return false }
         do {
-            var req = URLRequest(url: url)
-            req.timeoutInterval = 3
+            let req = makeAuthorizedRequest(url: url, timeout: 3)
             let (data, resp) = try await URLSession.shared.data(for: req)
             if let http = resp as? HTTPURLResponse, http.statusCode == 200 {
                 let decoder = JSONDecoder()
@@ -114,12 +126,9 @@ public class StoryTellerAPIService: ObservableObject {
         guard let url = URL(string: "\(cleanBaseURL)/api/ai/analyze-story") else {
             return NativeScraperService.shared.analyzeStoryVibe(story: story, title: title)
         }
-        var req = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.timeoutInterval = 6
         let body: [String: String] = ["story": story, "title": title]
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let req = makeAuthorizedRequest(url: url, method: "POST", body: bodyData, timeout: 6)
 
         do {
             let (data, _) = try await URLSession.shared.data(for: req)
@@ -367,18 +376,6 @@ public class StoryTellerAPIService: ObservableObject {
             // 💻 REMOTE PC PIPELINE
             // ==========================================
             guard let endpoint = URL(string: "\(cleanBaseURL)/api/video/generate") else { throw URLError(.badURL) }
-            var req = URLRequest(url: endpoint)
-            req.httpMethod = "POST"
-            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            req.timeoutInterval = 300
-
-            let marginV: Int
-            switch subtitlePosition {
-            case "upper": marginV = 1250
-            case "center": marginV = 950
-            default: marginV = 650
-            }
-
             let body: [String: Any] = [
                 "title": title,
                 "story": story,
@@ -393,7 +390,8 @@ public class StoryTellerAPIService: ObservableObject {
                 "bg_music_volume": bgMusicVolume,
                 "voice_volume": voiceVolume
             ]
-            req.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let bodyData = try JSONSerialization.data(withJSONObject: body)
+            let req = makeAuthorizedRequest(url: endpoint, method: "POST", body: bodyData, timeout: 300)
 
             generationProgressText = "PC server rendering video..."
             generationPercent = 0.50

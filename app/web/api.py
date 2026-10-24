@@ -23,8 +23,17 @@ from app.scrapers.ai_generator import AIViralStoryGenerator
 from app.video.tts import TTSEngine
 from app.video.background import BackgroundManager, THEMATIC_QUERIES
 from app.video.generator import VideoGenerator
+from app.security.shield import (
+    SecurityShieldMiddleware,
+    SecurityShield,
+    generate_server_attestation,
+    AUTHORIZED_BUNDLE_ID
+)
 
-app = FastAPI(title="Viral TikTok Story Generator", version="2.3.0")
+app = FastAPI(title="Viral TikTok Story Generator", version="2.4.0")
+
+# Security Hardening: Behavioral Firewall, Anti-Piracy Attestation & Anomaly Defense
+app.add_middleware(SecurityShieldMiddleware)
 
 # Services
 reddit_scraper = RedditScraper()
@@ -60,6 +69,29 @@ def get_network_info():
         "local_ip": ip,
         "port": 8000,
         "iphone_url": f"http://{ip}:8000"
+    }
+
+class HandshakeRequest(BaseModel):
+    bundle_id: str
+    client_version: Optional[str] = "1.0.23"
+
+@app.post("/api/security/handshake")
+def security_handshake(req: HandshakeRequest):
+    """
+    Client/Server Attestation Handshake.
+    Validates client authenticity and issues a cryptographic attestation token.
+    """
+    if req.bundle_id not in (AUTHORIZED_BUNDLE_ID, "com.storyteller.web"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Integrity Violation: Unauthorized bundle ID '{req.bundle_id}' rejected."
+        )
+    headers = generate_server_attestation(req.bundle_id, "/api/security/handshake")
+    return {
+        "status": "success",
+        "attestation": "verified",
+        "authorized_bundle": req.bundle_id,
+        "tokens": headers
     }
 
 @app.get("/api/presets")
@@ -161,7 +193,8 @@ class ScrapeURLRequest(BaseModel):
 
 @app.post("/api/reddit/scrape-url")
 def scrape_reddit_url(req: ScrapeURLRequest):
-    post = reddit_scraper.scrape_post_url(req.url)
+    safe_url = SecurityShield.validate_url(req.url)
+    post = reddit_scraper.scrape_post_url(safe_url)
     if not post:
         raise HTTPException(status_code=400, detail="Could not extract story from Reddit URL")
     return {"status": "success", "story": post}
@@ -174,7 +207,8 @@ def get_quora_stories(query: str = "viral secrets"):
 
 @app.post("/api/quora/scrape-url")
 def scrape_quora_url(req: ScrapeURLRequest):
-    post = quora_scraper.scrape_url(req.url)
+    safe_url = SecurityShield.validate_url(req.url)
+    post = quora_scraper.scrape_url(safe_url)
     if not post:
         raise HTTPException(status_code=400, detail="Could not extract story from Quora URL")
     return {"status": "success", "story": post}
@@ -182,7 +216,8 @@ def scrape_quora_url(req: ScrapeURLRequest):
 # ----------------- YOUTUBE -----------------
 @app.post("/api/youtube/scrape")
 def scrape_youtube(req: ScrapeURLRequest):
-    res = youtube_scraper.scrape_transcript(req.url)
+    safe_url = SecurityShield.validate_url(req.url)
+    res = youtube_scraper.scrape_transcript(safe_url)
     if not res:
         raise HTTPException(status_code=400, detail="Could not extract transcript from YouTube URL")
     return {"status": "success", "data": res}
@@ -262,19 +297,25 @@ def scrub_background(req: BGScrubRequest):
 
 @app.post("/api/backgrounds/upload")
 async def upload_background(file: UploadFile = File(...)):
-    filename = file.filename.replace(" ", "_")
-    target = BACKGROUNDS_DIR / filename
+    safe_filename = SecurityShield.sanitize_filename(file.filename, {".mp4", ".mov"})
+    target = BACKGROUNDS_DIR / safe_filename
+    content = await file.read()
+    if len(content) > 150 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Background video file size exceeds 150MB limit.")
     with open(target, "wb") as f:
-        f.write(await file.read())
-    return {"status": "success", "filename": filename}
+        f.write(content)
+    return {"status": "success", "filename": safe_filename}
 
 @app.post("/api/audio/upload")
 async def upload_audio(file: UploadFile = File(...)):
-    filename = file.filename.replace(" ", "_")
-    target = AUDIO_DIR / filename
+    safe_filename = SecurityShield.sanitize_filename(file.filename, {".mp3", ".m4a", ".wav"})
+    target = AUDIO_DIR / safe_filename
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Audio file size exceeds 50MB limit.")
     with open(target, "wb") as f:
-        f.write(await file.read())
-    return {"status": "success", "filename": filename}
+        f.write(content)
+    return {"status": "success", "filename": safe_filename}
 
 # ----------------- VIDEO GENERATION -----------------
 class GenerateVideoRequest(BaseModel):
@@ -297,8 +338,8 @@ class GenerateVideoRequest(BaseModel):
 
 @app.post("/api/video/generate")
 async def generate_video(req: GenerateVideoRequest):
-    if not req.story.strip():
-        raise HTTPException(status_code=400, detail="Story text cannot be empty")
+    # Context-Aware Input Guardrails
+    clean_title, clean_story = SecurityShield.validate_story(req.title, req.story)
 
     job_id = f"job_{int(asyncio.get_event_loop().time() * 1000)}"
     active_jobs[job_id] = {"status": "Starting AI storytelling pipeline...", "percent": 5}
@@ -308,14 +349,15 @@ async def generate_video(req: GenerateVideoRequest):
 
     custom_music_path = None
     if req.custom_bg_music_filename:
-        cand = AUDIO_DIR / req.custom_bg_music_filename
+        safe_music_file = SecurityShield.sanitize_filename(req.custom_bg_music_filename, {".mp3", ".m4a", ".wav"})
+        cand = AUDIO_DIR / safe_music_file
         if cand.exists():
             custom_music_path = str(cand)
 
     try:
         result = await video_gen.generate_tiktok_video(
-            title=req.title,
-            story_text=req.story,
+            title=clean_title,
+            story_text=clean_story,
             voice=req.voice,
             rate=req.rate,
             pitch=req.pitch,

@@ -918,4 +918,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadPresets();
     fetchRedditStories();
+
+    // ========================================================
+    // CORE DOMAIN 2: THE "LIQUID GLASS" FUTURE UI KIT (PC WEB)
+    // ========================================================
+    function initFluidGlassView() {
+        const canvas = document.getElementById("fluid-ripple-canvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const ripples = [];
+
+        function addRipple(x, y) {
+            if (ripples.length < 12) {
+                ripples.push({
+                    x, y,
+                    radius: 0,
+                    maxRadius: Math.min(width, height) * 0.28,
+                    speed: 3.2,
+                    opacity: 1.0
+                });
+            }
+        }
+
+        window.addEventListener("pointerdown", (e) => addRipple(e.clientX, e.clientY));
+        window.addEventListener("pointermove", (e) => {
+            if (Math.random() < 0.12) addRipple(e.clientX, e.clientY);
+        });
+
+        function renderRipples() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                const r = ripples[i];
+                r.radius += r.speed;
+                r.opacity = Math.max(0, 1.0 - (r.radius / r.maxRadius));
+
+                if (r.opacity <= 0.01) {
+                    ripples.splice(i, 1);
+                    continue;
+                }
+
+                // Refraction Caustic Ring
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity * 0.28})`;
+                ctx.lineWidth = Math.max(1, 4 * r.opacity);
+                ctx.stroke();
+
+                // Specular Sheen Rim
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, Math.max(0, r.radius - 3), 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(223, 177, 91, ${r.opacity * 0.22})`;
+                ctx.lineWidth = Math.max(0.5, 2 * r.opacity);
+                ctx.stroke();
+            }
+
+            requestAnimationFrame(renderRipples);
+        }
+
+        renderRipples();
+    }
+
+    function initLiquidButton() {
+        const btn = document.getElementById("btn-generate-video");
+        if (!btn) return;
+
+        btn.addEventListener("pointermove", (e) => {
+            const rect = btn.getBoundingClientRect();
+            const relX = (e.clientX - rect.left) / rect.width - 0.5;
+            const relY = (e.clientY - rect.top) / rect.height - 0.5;
+            const stretchX = relX * 14;
+            const stretchY = relY * 9;
+            btn.style.transform = `translate(${stretchX}px, ${stretchY}px) scale(1.02)`;
+        });
+
+        btn.addEventListener("pointerleave", () => {
+            btn.style.transform = "translate(0px, 0px) scale(1)";
+        });
+    }
+
+    initFluidGlassView();
+    initLiquidButton();
 });
