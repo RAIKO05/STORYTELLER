@@ -12,9 +12,15 @@ import Darwin
 public final class AppSecurityShield {
     public static let shared = AppSecurityShield()
 
-    // Cryptographic secret shared with backend for API handshake
-    private let appSecret = "st_sec_k98f21903ba8d7e6c412f901ab73c"
+    // Cryptographic secret shared with backend for API handshake (Keychain backed with dynamic rotation)
+    private var appSecret: String {
+        return KeychainHelper.load(key: "storyteller_attestation_secret") ?? "st_sec_k98f21903ba8d7e6c412f901ab73c"
+    }
     public let authorizedBundleId = "com.storyteller.app"
+
+    public func updateAttestationSecret(_ newSecret: String) {
+        KeychainHelper.save(key: "storyteller_attestation_secret", value: newSecret)
+    }
 
     public private(set) var isIntegrityVerified: Bool = true
     public private(set) var integrityFailureReason: String? = nil

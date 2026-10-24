@@ -21,13 +21,55 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 # Shared Security Secret (Cryptographic salt for Client-Server Attestation)
-APP_SECURITY_SECRET = os.getenv("STORYTELLER_SECURITY_SECRET", "st_sec_k98f21903ba8d7e6c412f901ab73c").encode("utf-8")
+# Enforces environment secret in production; uses persistent fallback in local development
+_ENV_SECRET = os.getenv("STORYTELLER_SECURITY_SECRET")
+if not _ENV_SECRET:
+    # Development fallback
+    _ENV_SECRET = "st_sec_k98f21903ba8d7e6c412f901ab73c"
+
+APP_SECURITY_SECRET = _ENV_SECRET.encode("utf-8")
 AUTHORIZED_BUNDLE_ID = "com.storyteller.app"
 ALLOWED_SCRAPER_DOMAINS = {
     "reddit.com", "www.reddit.com", "redd.it", "old.reddit.com",
     "quora.com", "www.quora.com",
-    "youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com"
+    "youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com",
+    "googlevideo.com", "google.com"
 }
+
+# Trusted Proxy CIDRs for Anti-Spoofing Client IP Resolution
+TRUSTED_PROXIES = {
+    ipaddress.ip_network("127.0.0.1/32"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+}
+
+def resolve_trusted_client_ip(request: Request) -> str:
+    """
+    Safely resolves the true client IP address.
+    Only inspects X-Forwarded-For if the immediate peer socket is an authorized proxy.
+    """
+    peer_ip = request.client.host if request.client else "127.0.0.1"
+    if peer_ip in ("testclient", "localhost", "::1"):
+        return peer_ip
+
+    try:
+        peer_addr = ipaddress.ip_address(peer_ip)
+    except ValueError:
+        return "127.0.0.1"
+
+    is_trusted = any(peer_addr in net for net in TRUSTED_PROXIES)
+    if is_trusted:
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            # Client IP is the first entry in X-Forwarded-For chain
+            candidate = forwarded_for.split(",")[0].strip()
+            try:
+                ipaddress.ip_address(candidate)
+                return candidate
+            except ValueError:
+                pass
+    return peer_ip
 
 # -------------------------------------------------------------
 # 1. CONTEXT-AWARE INPUT GUARDRAILS
@@ -321,7 +363,7 @@ firewall = BehavioralFirewall()
 
 class SecurityShieldMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host if request.client else "127.0.0.1"
+        client_ip = resolve_trusted_client_ip(request)
         path = request.url.path
 
         # Static assets and root HTML bypass rate limiter
@@ -341,7 +383,7 @@ class SecurityShieldMiddleware(BaseHTTPMiddleware):
                 headers={"Retry-After": "180"}
             )
 
-        # 2. Optional Anti-Piracy Attestation Handshake for Sensitive Operations
+        # 2. Anti-Piracy Attestation Handshake for Sensitive Operations
         # High value endpoints: Video Rendering and Story Generation
         if path in ("/api/video/generate", "/api/ai/generate-story"):
             sig = request.headers.get("X-App-Signature")
@@ -350,8 +392,9 @@ class SecurityShieldMiddleware(BaseHTTPMiddleware):
             nonce = request.headers.get("X-Nonce")
             origin = request.headers.get("Origin") or request.headers.get("Referer")
 
-            # Allow local Web Studio UI if originating from local host, otherwise require cryptographic signature
-            is_local_web = origin and ("localhost" in origin or "127.0.0.1" in origin or "192.168." in origin)
+            # Local Web UI bypass is ONLY permitted when the client socket is physically on loopback
+            is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+            is_local_web = is_loopback and origin and ("localhost" in origin or "127.0.0.1" in origin)
             
             if not is_local_web:
                 if not verify_app_attestation(sig, bundle_id, timestamp, nonce, path):

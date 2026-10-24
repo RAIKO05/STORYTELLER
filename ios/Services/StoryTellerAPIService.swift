@@ -9,13 +9,13 @@ public class StoryTellerAPIService: ObservableObject {
     // Run Mode: Default is Standalone (works 100% on iPhone without PC)
     @Published public var runMode: AppRunMode {
         didSet {
-            UserDefaults.standard.set(runMode.rawValue, forKey: "storyteller_run_mode")
+            KeychainHelper.save(key: "storyteller_run_mode", value: runMode.rawValue)
         }
     }
 
     @Published public var baseURL: String {
         didSet {
-            UserDefaults.standard.set(baseURL, forKey: "storyteller_base_url")
+            KeychainHelper.save(key: "storyteller_base_url", value: baseURL)
         }
     }
 
@@ -29,10 +29,21 @@ public class StoryTellerAPIService: ObservableObject {
     @Published public var customBackgroundURL: URL?
 
     public init() {
-        let savedMode = UserDefaults.standard.string(forKey: "storyteller_run_mode")
+        // Hardware-backed secure storage with seamless legacy migration
+        var savedMode = KeychainHelper.load(key: "storyteller_run_mode")
+        if savedMode == nil, let legacyMode = UserDefaults.standard.string(forKey: "storyteller_run_mode") {
+            savedMode = legacyMode
+            KeychainHelper.save(key: "storyteller_run_mode", value: legacyMode)
+            UserDefaults.standard.removeObject(forKey: "storyteller_run_mode")
+        }
         self.runMode = (savedMode == AppRunMode.remotePC.rawValue) ? .remotePC : .onDevice
 
-        let savedURL = UserDefaults.standard.string(forKey: "storyteller_base_url")
+        var savedURL = KeychainHelper.load(key: "storyteller_base_url")
+        if savedURL == nil, let legacyURL = UserDefaults.standard.string(forKey: "storyteller_base_url") {
+            savedURL = legacyURL
+            KeychainHelper.save(key: "storyteller_base_url", value: legacyURL)
+            UserDefaults.standard.removeObject(forKey: "storyteller_base_url")
+        }
         self.baseURL = savedURL ?? "http://192.168.11.146:8000"
 
         loadLocalPresets()

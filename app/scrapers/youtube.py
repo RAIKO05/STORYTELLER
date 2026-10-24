@@ -44,6 +44,7 @@ class YouTubeScraper:
 
                 transcript_text = ""
                 # Try json3 format first, then vtt, srv3
+                from app.security.shield import SecurityShield
                 for fmt in en_entries:
                     fmt_ext = fmt.get("ext", "")
                     sub_url = fmt.get("url", "")
@@ -51,7 +52,8 @@ class YouTubeScraper:
                         continue
                     
                     try:
-                        r = requests.get(sub_url, timeout=10)
+                        safe_sub_url = SecurityShield.validate_url(sub_url)
+                        r = requests.get(safe_sub_url, timeout=10, allow_redirects=False)
                         if r.status_code == 200:
                             if fmt_ext == "json3":
                                 data = r.json()

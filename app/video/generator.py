@@ -144,23 +144,29 @@ class VideoGenerator:
             f"ass='{escaped_ass}'"
         )
 
+        # Audio level validation and hardening (clamped to safe [0.0, 2.0] range)
+        safe_voice_vol = round(max(0.0, min(float(voice_volume), 2.0)), 2)
+        safe_bg_music_vol = round(max(0.0, min(float(bg_music_volume), 2.0)), 2)
+        safe_start_offset = max(0.0, float(start_offset))
+        safe_duration = max(1.0, float(duration))
+
         if resolved_bg_music_path:
             # Dual-input audio mix: Voiceover + Background Music
             filter_complex = (
                 f"[0:v]{vf_filter}[vout];"
-                f"[1:a]volume={voice_volume}[voice];"
-                f"[2:a]volume={bg_music_volume}[bgm];"
+                f"[1:a]volume={safe_voice_vol}[voice];"
+                f"[2:a]volume={safe_bg_music_vol}[bgm];"
                 f"[voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]"
             )
             cmd = [
                 "ffmpeg", "-y",
                 "-stream_loop", "-1",
-                "-ss", str(start_offset),
+                "-ss", str(safe_start_offset),
                 "-i", str(bg_path),
                 "-i", str(audio_path),
                 "-stream_loop", "-1",
                 "-i", str(resolved_bg_music_path),
-                "-t", str(duration),
+                "-t", str(safe_duration),
                 "-filter_complex", filter_complex,
                 "-map", "[vout]",
                 "-map", "[aout]",
@@ -175,10 +181,10 @@ class VideoGenerator:
             cmd = [
                 "ffmpeg", "-y",
                 "-stream_loop", "-1",
-                "-ss", str(start_offset),
+                "-ss", str(safe_start_offset),
                 "-i", str(bg_path),
                 "-i", str(audio_path),
-                "-t", str(duration),
+                "-t", str(safe_duration),
                 "-vf", vf_filter,
                 "-map", "0:v",
                 "-map", "1:a",

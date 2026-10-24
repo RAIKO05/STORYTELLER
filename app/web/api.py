@@ -44,7 +44,58 @@ video_gen = VideoGenerator()
 tts_engine = TTSEngine()
 ai_generator = AIViralStoryGenerator()
 
-active_jobs = {}
+import time
+from collections import OrderedDict
+from typing import Dict, Any
+
+class ExpiringJobStore:
+    """
+    Bounded in-memory store for video generation job statuses with TTL eviction.
+    Prevents heap memory exhaustion attacks and unbounded state leaks.
+    """
+    def __init__(self, max_entries: int = 500, ttl_seconds: int = 3600):
+        self._store: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+        self.max_entries = max_entries
+        self.ttl_seconds = ttl_seconds
+
+    def _prune(self, now: float):
+        expired = [k for k, v in self._store.items() if now - v.get("_updated_at", 0) > self.ttl_seconds]
+        for k in expired:
+            del self._store[k]
+
+    def __setitem__(self, job_id: str, data: Dict[str, Any]):
+        now = time.time()
+        self._prune(now)
+        data["_updated_at"] = now
+        self._store[job_id] = data
+        self._store.move_to_end(job_id)
+        if len(self._store) > self.max_entries:
+            self._store.popitem(last=False)
+
+    def __getitem__(self, job_id: str) -> Dict[str, Any]:
+        item = self._store.get(job_id)
+        if item is None:
+            raise KeyError(job_id)
+        if time.time() - item.get("_updated_at", 0) > self.ttl_seconds:
+            del self._store[job_id]
+            raise KeyError(job_id)
+        return item
+
+    def __contains__(self, job_id: str) -> bool:
+        if job_id not in self._store:
+            return False
+        if time.time() - self._store[job_id].get("_updated_at", 0) > self.ttl_seconds:
+            del self._store[job_id]
+            return False
+        return True
+
+    def get(self, job_id: str, default: Any = None) -> Any:
+        try:
+            return self[job_id]
+        except KeyError:
+            return default
+
+active_jobs = ExpiringJobStore(max_entries=500, ttl_seconds=3600)
 
 # Mounts
 app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
@@ -73,7 +124,7 @@ def get_network_info():
 
 class HandshakeRequest(BaseModel):
     bundle_id: str
-    client_version: Optional[str] = "1.0.23"
+    client_version: Optional[str] = "1.0.25"
 
 @app.post("/api/security/handshake")
 def security_handshake(req: HandshakeRequest):

@@ -75,5 +75,27 @@ class SecurityShieldTestCase(unittest.TestCase):
         res = client.get("/api/presets?scan=.env")
         self.assertEqual(res.status_code, 429)
 
+    def test_ass_subtitle_header_injection_sanitization(self):
+        """ASS header builder strips newlines and restricts font names."""
+        from app.video.subtitles import SubtitleGenerator
+        gen = SubtitleGenerator()
+        malicious_font = "Arial Black\nStyle: InjectedStyle,Comic Sans,100...\n[Events]\nDialogue: 0"
+        header = gen._build_ass_header(font_name=malicious_font)
+        self.assertNotIn("\nStyle: InjectedStyle", header)
+        self.assertIn("Style: TikTokKaraoke,Arial BlackStyle InjectedStyleComic Sans100EventsDialogue 0", header)
+
+    def test_expiring_job_store_eviction(self):
+        """Job store evicts oldest jobs when reaching max capacity and prunes expired ones."""
+        from app.web.api import ExpiringJobStore
+        store = ExpiringJobStore(max_entries=3, ttl_seconds=1)
+        store["job_1"] = {"val": 1}
+        store["job_2"] = {"val": 2}
+        store["job_3"] = {"val": 3}
+        store["job_4"] = {"val": 4} # Should evict job_1
+
+        self.assertNotIn("job_1", store)
+        self.assertIn("job_4", store)
+        self.assertEqual(store["job_4"]["val"], 4)
+
 if __name__ == "__main__":
     unittest.main()

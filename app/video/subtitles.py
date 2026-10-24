@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import List, Dict
 from app.utils.helpers import format_time_ass
@@ -6,6 +7,7 @@ class SubtitleGenerator:
     """
     Generates dynamic TikTok-style karaoke ASS subtitles
     with custom highlighting, customizable fonts, outlines, and mobile-safe margins.
+    Hardened against ASS format string and header injection.
     """
 
     def _build_ass_header(
@@ -16,7 +18,14 @@ class SubtitleGenerator:
         outline_width: int = 6,
         shadow_width: int = 3
     ) -> str:
-        single_size = int(font_size * 1.15)
+        # Whitelist font name to alphanumeric, spaces, and safe dashes (strictly forbidding CR/LF line breaks)
+        safe_font = re.sub(r"[^a-zA-Z0-9 _-]", "", str(font_name)).strip() or "Arial Black"
+        safe_font_size = max(20, min(int(font_size), 160))
+        safe_margin_v = max(50, min(int(margin_v), 1200))
+        safe_outline = max(0, min(int(outline_width), 20))
+        safe_shadow = max(0, min(int(shadow_width), 20))
+        single_size = int(safe_font_size * 1.15)
+
         return f"""[Script Info]
 Title: TikTok Viral Subtitles
 ScriptType: v4.00+
@@ -28,8 +37,8 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: TikTokKaraoke,{font_name},{font_size},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,{outline_width},{shadow_width},2,60,60,{margin_v},1
-Style: TikTokSingle,{font_name},{single_size},&H0000FFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,{outline_width + 1},{shadow_width + 1},2,60,60,{margin_v},1
+Style: TikTokKaraoke,{safe_font},{safe_font_size},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,{safe_outline},{safe_shadow},2,60,60,{safe_margin_v},1
+Style: TikTokSingle,{safe_font},{single_size},&H0000FFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,{safe_outline + 1},{safe_shadow + 1},2,60,60,{safe_margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -52,6 +61,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         """
         Creates an ASS subtitle file from timed words with full typography customization.
         """
+        # Validate and sanitize highlight color (must match &H[A-Fa-f0-9]{6}& format)
+        if not re.match(r"^&H[0-9A-Fa-f]{6}&?$", str(highlight_color)):
+            highlight_color = "&H00FFFF&"
+        if not highlight_color.endswith("&"):
+            highlight_color += "&"
+
         dialogue_lines = []
         header = self._build_ass_header(
             font_name=font_name,
